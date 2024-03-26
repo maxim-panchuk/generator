@@ -13,6 +13,17 @@ type Model struct {
 	PropKeys    []string
 	Properties  *orderedmap.Map[string, *Model]
 	Items       *Model
+	Ref         string
+}
+
+func (m *Model) GetReference() (ref string) {
+	if m.Ref != "" {
+		return m.Ref
+	}
+	if m.Items != nil {
+		return m.Items.GetReference()
+	}
+	return
 }
 
 type Models map[string]*Model

@@ -27,6 +27,9 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("generate: %e", err)
 	}
 
+	data := definitions.GetData()
+	logger.Info(fmt.Sprintf("data %v", data))
+
 	if err := g.generateModels(); err != nil {
 		return fmt.Errorf("generate: %e", err)
 	}

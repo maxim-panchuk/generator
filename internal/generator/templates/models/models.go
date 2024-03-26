@@ -1,8 +1,8 @@
 package models
 
 import (
+	"generator/internal/generator/utils"
 	"os"
-	"strings"
 	"text/template"
 )
 
@@ -13,7 +13,9 @@ func Models() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"upFirst": strings.ToUpper,
+		"upFirst":         utils.UpFirst,
+		"getField":        utils.GetField,
+		"getDtoFieldType": utils.GetDtoFieldType,
 	}
 
 	tmpl, err := template.New("models").Funcs(funcMap).Parse(string(f))

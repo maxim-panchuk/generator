@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"generator/config"
 	"generator/internal/generator/definitions"
+	"generator/internal/generator/utils"
 	"github.com/pb33f/libopenapi"
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
@@ -52,6 +53,20 @@ func (p *Parser) parseModel(schemaProxy *base.SchemaProxy, schemaName string) (*
 		Type:        schema.Type[0],
 		Format:      schema.Format,
 		Description: schema.Description,
+	}
+
+	// Ссылка на другую ДТО
+	if ref := schemaProxy.GetReference(); ref != "" {
+		model.Ref = ref
+	}
+	isArray, arraySchema := utils.IsArraySchema(schema)
+	if isArray {
+		arraySchemaName := utils.GetDefinitionNameFromRef(arraySchema.GetReference())
+		propItemsModel, err := p.parseModel(arraySchema, arraySchemaName)
+		if err != nil {
+			return nil, fmt.Errorf("parse model %s: %w", arraySchemaName, err)
+		}
+		model.Items = propItemsModel
 	}
 
 	if !containsProperties(schema) {
