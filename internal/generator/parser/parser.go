@@ -79,9 +79,8 @@ func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
 		Parameters: nil,
 		// TODO:
 		RequestBody: nil,
-		// TODO:
-		Responses: nil,
-		IsTypical: false,
+		Responses:   parseResponses(opv3),
+		IsTypical:   false,
 	}
 
 	xm := extractXMeta(opv3)
@@ -91,6 +90,51 @@ func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
 		op.IsTypical = true
 	}
 	return op
+}
+
+func parseResponses(opv3 *v3.Operation) []*definitions.Response {
+	responseList := make([]*definitions.Response, 0)
+	for pair := opv3.Responses.Codes.First(); pair != nil; pair = pair.Next() {
+		code := pair.Key()
+		resp := pair.Value()
+
+		readyResp := &definitions.Response{
+			Code:        code,
+			Description: resp.Description,
+			Content:     parseContent(resp.Content),
+		}
+
+		responseList = append(responseList, readyResp)
+	}
+	if def := parseDefault(opv3); def != nil {
+		responseList = append(responseList, def)
+	}
+	return responseList
+}
+
+func parseDefault(opv3 *v3.Operation) *definitions.Response {
+	def := opv3.Responses.Default
+	if def == nil {
+		return nil
+	}
+	readyResp := &definitions.Response{
+		Code:        "default",
+		Description: def.Description,
+		Content:     parseContent(def.Content),
+	}
+	return readyResp
+}
+
+func parseContent(content *orderedmap.Map[string, *v3.MediaType]) *definitions.Model {
+	if content == nil {
+		return nil
+	}
+	c, ok := content.Get("application/json")
+	if !ok {
+		return nil
+	}
+	modelName := utils.GetDefinitionNameFromRef(c.Schema.GetReference())
+	return definitions.GetData().Models[modelName]
 }
 
 func extractXMeta(op *v3.Operation) *definitions.XMeta {

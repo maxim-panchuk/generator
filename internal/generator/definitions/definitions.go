@@ -36,9 +36,13 @@ type Parameter struct {
 }
 
 type Response struct {
-	Code        int
+	Code        string
 	Description string
 	Content     *Model
+}
+
+func (r *Response) IsDefault() bool {
+	return r.Code == "default"
 }
 
 type XMeta struct {
