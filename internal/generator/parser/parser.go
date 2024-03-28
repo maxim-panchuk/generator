@@ -78,7 +78,7 @@ func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
 		// TODO:
 		Parameters: nil,
 		// TODO:
-		RequestBody: nil,
+		RequestBody: parseRequestBody(opv3),
 		Responses:   parseResponses(opv3),
 		IsTypical:   false,
 	}
@@ -92,16 +92,28 @@ func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
 	return op
 }
 
+func parseRequestBody(opv3 *v3.Operation) *definitions.RequestBody {
+	if opv3.RequestBody == nil || opv3.RequestBody.Content == nil {
+		return nil
+	}
+	content, isArray := parseContent(opv3.RequestBody.Content)
+	return &definitions.RequestBody{
+		Content: content,
+		IsArray: isArray,
+	}
+}
+
 func parseResponses(opv3 *v3.Operation) []*definitions.Response {
 	responseList := make([]*definitions.Response, 0)
 	for pair := opv3.Responses.Codes.First(); pair != nil; pair = pair.Next() {
 		code := pair.Key()
 		resp := pair.Value()
-
+		content, isArray := parseContent(resp.Content)
 		readyResp := &definitions.Response{
 			Code:        code,
 			Description: resp.Description,
-			Content:     parseContent(resp.Content),
+			Content:     content,
+			IsArray:     isArray,
 		}
 
 		responseList = append(responseList, readyResp)
@@ -117,24 +129,40 @@ func parseDefault(opv3 *v3.Operation) *definitions.Response {
 	if def == nil {
 		return nil
 	}
+	content, isArray := parseContent(def.Content)
 	readyResp := &definitions.Response{
 		Code:        "default",
 		Description: def.Description,
-		Content:     parseContent(def.Content),
+		Content:     content,
+		IsArray:     isArray,
 	}
 	return readyResp
 }
 
-func parseContent(content *orderedmap.Map[string, *v3.MediaType]) *definitions.Model {
+func parseContent(content *orderedmap.Map[string, *v3.MediaType]) (*definitions.Model, bool) {
 	if content == nil {
-		return nil
+		return nil, false
 	}
 	c, ok := content.Get("application/json")
 	if !ok {
-		return nil
+		return nil, false
 	}
-	modelName := utils.GetDefinitionNameFromRef(c.Schema.GetReference())
-	return definitions.GetData().Models[modelName]
+	schema, err := c.Schema.BuildSchema()
+	if err != nil {
+		panic(err)
+	}
+	var modelName string
+	isArray, arraySchema := utils.IsArraySchema(schema)
+	if isArray {
+		modelName = utils.GetDefinitionNameFromRef(arraySchema.GetReference())
+	} else {
+		modelName = utils.GetDefinitionNameFromRef(c.Schema.GetReference())
+	}
+	model := definitions.GetData().Models[modelName]
+	if isArray {
+		return model, true
+	}
+	return model, false
 }
 
 func extractXMeta(op *v3.Operation) *definitions.XMeta {

@@ -39,6 +39,12 @@ type Response struct {
 	Code        string
 	Description string
 	Content     *Model
+	IsArray     bool
+}
+
+type RequestBody struct {
+	Content *Model
+	IsArray bool
 }
 
 func (r *Response) IsDefault() bool {
@@ -61,7 +67,7 @@ type Operation struct {
 	Description string
 	OperationId string
 	Parameters  []*Parameter
-	RequestBody *Model
+	RequestBody *RequestBody
 	Responses   []*Response
 	IsTypical   bool
 	XMeta       *XMeta
