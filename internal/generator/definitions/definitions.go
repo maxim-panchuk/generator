@@ -28,8 +28,51 @@ func (m *Model) GetReference() (ref string) {
 
 type Models map[string]*Model
 
+type Parameter struct {
+	Name        string
+	Description string
+	In          string
+	Schema      *Model
+}
+
+type Response struct {
+	Code        int
+	Description string
+	Content     *Model
+}
+
+type XMeta struct {
+	Object string
+	Model  *Model
+	Type   string
+}
+
+func (xm *XMeta) IncludeModel(name string) {
+	xm.Model = GetData().Models[name]
+}
+
+type Operation struct {
+	Tag         string
+	Summary     string
+	Description string
+	OperationId string
+	Parameters  []*Parameter
+	RequestBody *Model
+	Responses   []*Response
+	IsTypical   bool
+	XMeta       *XMeta
+}
+
+type Path struct {
+	Url        string
+	Operations []*Operation
+}
+
+type Tags map[string][]*Path
+
 type Data struct {
 	Models Models
+	Tags   Tags
 }
 
 var once sync.Once
@@ -39,6 +82,7 @@ func GetData() *Data {
 	once.Do(func() {
 		data = &Data{
 			Models: make(Models),
+			Tags:   make(Tags),
 		}
 	})
 	return data

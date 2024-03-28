@@ -28,7 +28,83 @@ func (p *Parser) Parse() error {
 	if err := p.addModels(); err != nil {
 		return fmt.Errorf("parse: %e", err)
 	}
+	p.addTags()
 	return nil
+}
+
+func (p *Parser) addTags() {
+	tags := definitions.GetData().Tags
+	for _, tag := range p.doc.Model.Tags {
+		tags[tag.Name] = p.iterateUris(tag.Name)
+	}
+	definitions.GetData().Tags = tags
+}
+
+func (p *Parser) iterateUris(tag string) []*definitions.Path {
+	pathList := make([]*definitions.Path, 0)
+	for pair := p.doc.Model.Paths.PathItems.First(); pair != nil; pair = pair.Next() {
+		uri := pair.Key()
+		operations := p.iterateCruds(tag, pair.Value().GetOperations())
+		if len(operations) == 0 {
+			continue
+		}
+		path := &definitions.Path{
+			Url:        uri,
+			Operations: operations,
+		}
+		pathList = append(pathList, path)
+	}
+	return pathList
+}
+
+func (p *Parser) iterateCruds(tag string, cruds *orderedmap.Map[string, *v3.Operation]) []*definitions.Operation {
+	operationList := make([]*definitions.Operation, 0)
+	for pair := cruds.First(); pair != nil; pair = pair.Next() {
+		opv3 := pair.Value()
+		if tag != opv3.Tags[0] {
+			continue
+		}
+		operationList = append(operationList, p.buildOperation(opv3))
+	}
+	return operationList
+}
+
+func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
+	op := &definitions.Operation{
+		Tag:         opv3.Tags[0],
+		Summary:     opv3.Summary,
+		Description: opv3.Description,
+		OperationId: opv3.OperationId,
+		// TODO:
+		Parameters: nil,
+		// TODO:
+		RequestBody: nil,
+		// TODO:
+		Responses: nil,
+		IsTypical: false,
+	}
+
+	xm := extractXMeta(opv3)
+	if xm != nil {
+		xm.IncludeModel(utils.GetDefinitionNameFromRef(xm.Object))
+		op.XMeta = xm
+		op.IsTypical = true
+	}
+	return op
+}
+
+func extractXMeta(op *v3.Operation) *definitions.XMeta {
+	node, ok := op.Extensions.Get("x-meta")
+	if !ok {
+		return nil
+	}
+
+	xm := &definitions.XMeta{}
+	if err := node.Decode(xm); err != nil {
+		panic(err)
+	}
+
+	return xm
 }
 
 func (p *Parser) addModels() error {
@@ -55,7 +131,6 @@ func (p *Parser) parseModel(schemaProxy *base.SchemaProxy, schemaName string) (*
 		Description: schema.Description,
 	}
 
-	// Ссылка на другую ДТО
 	if ref := schemaProxy.GetReference(); ref != "" {
 		model.Ref = ref
 	}

@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 	"generator/internal/generator/definitions"
-	"generator/internal/generator/folderstructure"
+	"generator/internal/generator/filesystem"
 	openapiParser "generator/internal/generator/parser"
 	"generator/internal/generator/templates"
 	"generator/internal/generator/templates/models"
@@ -30,6 +30,10 @@ func (g *Generator) Generate() error {
 	data := definitions.GetData()
 	logger.Info(fmt.Sprintf("data %v", data))
 
+	if err := filesystem.CreateArchetypeFileSystem(); err != nil {
+		return fmt.Errorf("generate: %e", err)
+	}
+
 	if err := g.generateModels(); err != nil {
 		return fmt.Errorf("generate: %e", err)
 	}
@@ -42,7 +46,7 @@ func (g *Generator) generateModels() error {
 		logger.Info(fmt.Sprintf("generate model: %s", modelName))
 		if err := templates.RunTemplate(&templates.TemplateData{
 			Template: models.Models(),
-			FilePath: path.Join(folderstructure.PathToModel, model.ModelName+".go"),
+			FilePath: path.Join(filesystem.PathToModel, model.ModelName+".go"),
 			Data:     model,
 		}); err != nil {
 			return fmt.Errorf("generate models: %e", err)
@@ -50,3 +54,7 @@ func (g *Generator) generateModels() error {
 	}
 	return nil
 }
+
+//func (g *Generator) generateOperations() error {
+//
+//}

@@ -9,7 +9,4 @@ func main() {
 	if err := g.Generate(); err != nil {
 		panic(err)
 	}
-	if err := g.Generate(); err != nil {
-		panic(err)
-	}
 }
