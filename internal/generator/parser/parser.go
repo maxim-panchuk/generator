@@ -28,23 +28,33 @@ func (p *Parser) Parse() error {
 	if err := p.addModels(); err != nil {
 		return fmt.Errorf("parse: %e", err)
 	}
-	p.addTags()
+	if err := p.addTags(); err != nil {
+		return fmt.Errorf("parse: %e", err)
+	}
 	return nil
 }
 
-func (p *Parser) addTags() {
+func (p *Parser) addTags() error {
 	tags := definitions.GetData().Tags
 	for _, tag := range p.doc.Model.Tags {
-		tags[tag.Name] = p.iterateUris(tag.Name)
+		pathList, err := p.iterateUris(tag.Name)
+		if err != nil {
+			return fmt.Errorf("addTags: %s", tag.Name)
+		}
+		tags[tag.Name] = pathList
 	}
 	definitions.GetData().Tags = tags
+	return nil
 }
 
-func (p *Parser) iterateUris(tag string) []*definitions.Path {
+func (p *Parser) iterateUris(tag string) ([]*definitions.Path, error) {
 	pathList := make([]*definitions.Path, 0)
 	for pair := p.doc.Model.Paths.PathItems.First(); pair != nil; pair = pair.Next() {
 		uri := pair.Key()
-		operations := p.iterateCruds(tag, pair.Value().GetOperations())
+		operations, err := p.iterateCruds(tag, pair.Value().GetOperations())
+		if err != nil {
+			return nil, fmt.Errorf("iterateUris: %s", uri)
+		}
 		if len(operations) == 0 {
 			continue
 		}
@@ -54,30 +64,37 @@ func (p *Parser) iterateUris(tag string) []*definitions.Path {
 		}
 		pathList = append(pathList, path)
 	}
-	return pathList
+	return pathList, nil
 }
 
-func (p *Parser) iterateCruds(tag string, cruds *orderedmap.Map[string, *v3.Operation]) []*definitions.Operation {
+func (p *Parser) iterateCruds(tag string, cruds *orderedmap.Map[string, *v3.Operation]) ([]*definitions.Operation, error) {
 	operationList := make([]*definitions.Operation, 0)
 	for pair := cruds.First(); pair != nil; pair = pair.Next() {
 		opv3 := pair.Value()
 		if tag != opv3.Tags[0] {
 			continue
 		}
-		operationList = append(operationList, p.buildOperation(opv3))
+		op, err := p.buildOperation(opv3)
+		if err != nil {
+			return nil, fmt.Errorf("iterateCruds: %s", pair.Key())
+		}
+		operationList = append(operationList, op)
 	}
-	return operationList
+	return operationList, nil
 }
 
-func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
+func (p *Parser) buildOperation(opv3 *v3.Operation) (*definitions.Operation, error) {
+	paramList, err := parseParamList(opv3)
+	if err != nil {
+		return nil, fmt.Errorf("buildOperation: %s", opv3.OperationId)
+	}
+
 	op := &definitions.Operation{
 		Tag:         opv3.Tags[0],
 		Summary:     opv3.Summary,
 		Description: opv3.Description,
 		OperationId: opv3.OperationId,
-		// TODO:
-		Parameters: nil,
-		// TODO:
+		Parameters:  paramList,
 		RequestBody: parseRequestBody(opv3),
 		Responses:   parseResponses(opv3),
 		IsTypical:   false,
@@ -89,7 +106,53 @@ func (p *Parser) buildOperation(opv3 *v3.Operation) *definitions.Operation {
 		op.XMeta = xm
 		op.IsTypical = true
 	}
-	return op
+	return op, nil
+}
+
+func parseParamList(opv3 *v3.Operation) ([]*definitions.Parameter, error) {
+	pv3List := opv3.Parameters
+	if pv3List == nil {
+		return nil, nil
+	}
+	paramList := make([]*definitions.Parameter, 0, len(pv3List))
+	for _, pv3 := range pv3List {
+		p, err := parseParam(pv3)
+		if err != nil {
+			return nil, fmt.Errorf("parseParamList ")
+		}
+		paramList = append(paramList, p)
+	}
+	return paramList, nil
+}
+
+func parseParam(pv3 *v3.Parameter) (*definitions.Parameter, error) {
+	p := &definitions.Parameter{
+		Name:        pv3.Name,
+		Description: pv3.Description,
+		In:          pv3.In,
+		IsArray:     false,
+		Required:    true,
+	}
+
+	if required := pv3.Required; required != nil {
+		p.Required = *required
+	}
+
+	schema, err := buildSchema(pv3.Schema)
+	if err != nil {
+		return nil, fmt.Errorf("parse param: %s", pv3.Name)
+	}
+	isArray, arraySchema := utils.IsArraySchema(schema)
+	if isArray {
+		p.IsArray = true
+		schema = arraySchema.Schema()
+	}
+	p.Type = schema.Type[0]
+	p.Format = schema.Format
+	if def := schema.Default; def != nil {
+		p.Default = schema.Default.Value
+	}
+	return p, nil
 }
 
 func parseRequestBody(opv3 *v3.Operation) *definitions.RequestBody {
@@ -159,10 +222,7 @@ func parseContent(content *orderedmap.Map[string, *v3.MediaType]) (*definitions.
 		modelName = utils.GetDefinitionNameFromRef(c.Schema.GetReference())
 	}
 	model := definitions.GetData().Models[modelName]
-	if isArray {
-		return model, true
-	}
-	return model, false
+	return model, isArray
 }
 
 func extractXMeta(op *v3.Operation) *definitions.XMeta {

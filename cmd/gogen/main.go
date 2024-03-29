@@ -1,8 +1,6 @@
 package main
 
-import (
-	"generator/internal/generator"
-)
+import "generator/internal/generator"
 
 func main() {
 	g := generator.New()

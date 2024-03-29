@@ -32,7 +32,11 @@ type Parameter struct {
 	Name        string
 	Description string
 	In          string
-	Schema      *Model
+	Type        string
+	Format      string
+	IsArray     bool
+	Required    bool
+	Default     interface{}
 }
 
 type Response struct {
