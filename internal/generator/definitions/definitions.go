@@ -47,8 +47,9 @@ type Response struct {
 }
 
 type RequestBody struct {
-	Content *Model
-	IsArray bool
+	Description string
+	Content     *Model
+	IsArray     bool
 }
 
 func (r *Response) IsDefault() bool {

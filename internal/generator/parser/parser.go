@@ -160,9 +160,13 @@ func parseRequestBody(opv3 *v3.Operation) *definitions.RequestBody {
 		return nil
 	}
 	content, isArray := parseContent(opv3.RequestBody.Content)
+	if content == nil {
+		return nil
+	}
 	return &definitions.RequestBody{
-		Content: content,
-		IsArray: isArray,
+		Description: opv3.RequestBody.Description,
+		Content:     content,
+		IsArray:     isArray,
 	}
 }
 

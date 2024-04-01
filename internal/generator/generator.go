@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"generator/internal/generator/crudgen"
 	"generator/internal/generator/definitions"
 	"generator/internal/generator/filesystem"
 	openapiParser "generator/internal/generator/parser"
@@ -38,6 +39,10 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("generate: %e", err)
 	}
 
+	if err := g.generateCruds(); err != nil {
+		return fmt.Errorf("generate: %e", err)
+	}
+
 	return nil
 }
 
@@ -55,6 +60,10 @@ func (g *Generator) generateModels() error {
 	return nil
 }
 
-//func (g *Generator) generateOperations() error {
-//
-//}
+func (g *Generator) generateCruds() error {
+	crudGen := crudgen.New()
+	if err := crudGen.Generate(); err != nil {
+		return fmt.Errorf("generateCruds: %e", err)
+	}
+	return nil
+}

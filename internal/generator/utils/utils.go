@@ -16,6 +16,28 @@ func UpFirst(s string) string {
 	return firstCharUpper + s[1:]
 }
 
+func LowFirst(s string) string {
+	if len(s) == 0 {
+		panic("lowFirst panic: zero len string")
+	}
+
+	firstCharLower := strings.ToLower(string(s[0]))
+	return firstCharLower + s[1:]
+}
+
+func GetResponse(op *definitions.Operation) string {
+	for _, resp := range op.Responses {
+		if resp.Content != nil {
+			if resp.IsArray {
+				return fmt.Sprintf("([]*models.%s, error)", resp.Content.ModelName)
+			} else {
+				return fmt.Sprintf("(*models.%s, error)", resp.Content.ModelName)
+			}
+		}
+	}
+	return "error"
+}
+
 func GetField(fieldName string, p orderedmap.Map[string, *definitions.Model]) *definitions.Model {
 	model, ok := p.Get(fieldName)
 	if !ok {
@@ -35,7 +57,7 @@ func GetDtoFieldType(model *definitions.Model) string {
 		return "[]" + GetDtoFieldType(model.Items)
 	}
 
-	return convertToGoType(model.Type, model.Format)
+	return ConvertToGoType(model.Type, model.Format)
 }
 
 func GetDefinitionNameFromRef(ref string) string {
@@ -51,7 +73,7 @@ func IsArraySchema(schema *base.Schema) (isArraySchema bool, arraySchema *base.S
 	return false, nil
 }
 
-func convertToGoType(swaggerType, swaggerFormat string) string {
+func ConvertToGoType(swaggerType, swaggerFormat string) string {
 	switch swaggerType {
 	case "integer":
 		switch swaggerFormat {

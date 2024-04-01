@@ -1,0 +1,24 @@
+package {{ .Tag }}
+
+{{ $paths := index $.Data.Tags .Tag }}
+type Service interface {
+    {{ range $paths -}}
+        {{ range .Operations -}}
+            // {{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
+            {{ upFirst .OperationId }}(
+               {{- if .RequestBody }}
+                    {{- $modelName := .RequestBody.Content.ModelName }}
+                    {{ if .RequestBody.IsArray -}}
+                        {{ lowFirst $modelName }} []*models.{{ $modelName }}, // {{ .Description }}
+                    {{ else -}}
+                        {{ lowFirst $modelName }} *models.{{ $modelName }},
+                    {{- end }}
+               {{- end }}
+               {{- range .Parameters -}}
+                    {{ $type := convertToGoType .Type .Format }}
+                    {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
+               {{- end }}
+            ) {{ getResponse . }}
+        {{ end -}}
+    {{ end }}
+}
