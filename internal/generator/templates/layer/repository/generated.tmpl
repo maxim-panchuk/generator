@@ -3,6 +3,7 @@ package generated
 import (
     "gorm.io/gorm"
     "{{ getRootFolderPath }}/internal/models"
+    "context"
 )
 
 type RepositoryImpl struct {
@@ -18,6 +19,7 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
     {{ range .Operations -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
             func (s *RepositoryImpl) {{ upFirst .OperationId }}(
+                ctx context.Context,
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}

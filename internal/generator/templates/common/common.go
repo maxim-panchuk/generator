@@ -13,8 +13,9 @@ func Main() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"upFirst":         utils.UpFirst,
-		"convertToGoType": utils.ConvertToGoType,
+		"upFirst":           utils.UpFirst,
+		"convertToGoType":   utils.ConvertToGoType,
+		"getRootFolderPath": utils.GetRootFolderPath,
 	}
 
 	tmpl, err := template.New("controller interface").Funcs(funcMap).Parse(string(f))

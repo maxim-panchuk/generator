@@ -2,6 +2,8 @@ package {{ .Tag }}
 
 import (
     "net/http"
+    "{{ getRootFolderPath }}/internal/transport/http/in/{{ .Tag }}/custom"
+    {{ .Tag }}Service "{{ getRootFolderPath }}/internal/service/{{ .Tag }}"
 )
 
 {{ $paths := index $.Data.Tags .Tag }}
@@ -13,4 +15,8 @@ type Controller interface {
                w http.ResponseWriter, r *http.Request) error
         {{ end -}}
     {{ end }}
+}
+
+func NewController(service {{ .Tag }}Service.Service) *custom.ControllerImpl {
+	return custom.NewController(service)
 }

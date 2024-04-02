@@ -1,5 +1,19 @@
 package main
 
+import (
+    "{{ getRootFolderPath }}/configs/database/postgres"
+    {{ range $tag, $paths := .Tags }}
+        {{ $tag }}RepoImport "{{ getRootFolderPath }}/internal/database/repositories/{{ $tag }}"
+        {{ $tag }}ServiceImport "{{ getRootFolderPath }}/internal/service/{{ $tag }}"
+        {{ $tag }}ControllerImport "{{ getRootFolderPath }}/internal/transport/http/in/{{ $tag }}"
+    {{ end }}
+)
+
 func main() {
-    fmt.Println("Service started")
+    gormdb := postgres.GetGorm()
+    {{ range $tag, $paths := .Tags }}
+        {{ $tag }}Repo := {{ $tag }}RepoImport.NewRepository(gormdb)
+        {{ $tag }}Service := {{ $tag }}ServiceImport.NewService({{ $tag }}Repo)
+        {{ $tag }}Controller := {{ $tag }}ControllerImport.NewController({{ $tag }}Service)
+    {{ end }}
 }

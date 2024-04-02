@@ -3,6 +3,7 @@ package generated
 import (
      {{ .Tag }}Repository "{{ getRootFolderPath }}/internal/database/repositories/{{ .Tag }}"
      "{{ getRootFolderPath }}/internal/models"
+     "context"
 )
 
 type ServiceImpl struct {
@@ -20,6 +21,7 @@ func NewService(repo {{ .Tag }}Repository.Repository) *ServiceImpl {
     {{ range .Operations -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
             func (s *ServiceImpl) {{ upFirst .OperationId }}(
+                ctx context.Context,
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}

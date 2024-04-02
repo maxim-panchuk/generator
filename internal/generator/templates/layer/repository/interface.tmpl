@@ -2,6 +2,9 @@ package {{ .Tag }}
 
 import (
     "{{ getRootFolderPath }}/internal/models"
+    "{{ getRootFolderPath }}/internal/database/repositories/{{ .Tag }}/custom"
+    "gorm.io/gorm"
+    "context"
 )
 
 {{ $paths := index $.Data.Tags .Tag }}
@@ -10,6 +13,7 @@ type Repository interface {
         {{ range .Operations -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
             {{ upFirst .OperationId }}(
+                ctx context.Context,
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}
@@ -25,4 +29,8 @@ type Repository interface {
             ) {{ getResponse . }}
         {{ end -}}
     {{ end }}
+}
+
+func NewRepository(db *gorm.DB) *custom.RepositoryImpl {
+    return custom.NewRepository(db)
 }

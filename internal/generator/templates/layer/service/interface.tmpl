@@ -2,6 +2,9 @@ package {{ .Tag }}
 
 import (
     "{{ getRootFolderPath }}/internal/models"
+    "{{ getRootFolderPath }}/internal/service/{{ .Tag }}/custom"
+    {{ .Tag }}Repository "{{ getRootFolderPath }}/internal/database/repositories/{{ .Tag }}"
+    "context"
 )
 
 {{ $paths := index $.Data.Tags .Tag }}
@@ -10,6 +13,7 @@ type Service interface {
         {{ range .Operations -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
             {{ upFirst .OperationId }}(
+                ctx context.Context,
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}
@@ -25,4 +29,8 @@ type Service interface {
             ) {{ getResponse . }}
         {{ end -}}
     {{ end }}
+}
+
+func NewService(repo {{ .Tag }}Repository.Repository) *custom.ServiceImpl {
+	return custom.NewService(repo)
 }
