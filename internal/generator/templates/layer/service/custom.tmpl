@@ -1,0 +1,16 @@
+package custom
+
+import (
+    {{ .Tag }}Repository "{{ getRootFolderPath }}/internal/database/repositories/{{ .Tag }}"
+    "{{ getRootFolderPath }}/internal/service/{{ .Tag }}/generated"
+)
+
+type ServiceImpl struct {
+    *generated.ServiceImpl
+}
+
+func NewService(repo {{ .Tag }}Repository.Repository) *ServiceImpl {
+    return &ServiceImpl{
+        ServiceImpl: generated.NewService(repo),
+    }
+}

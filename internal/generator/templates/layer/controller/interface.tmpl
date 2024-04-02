@@ -1,16 +1,16 @@
 package {{ .Tag }}
 
+import (
+    "net/http"
+)
+
 {{ $paths := index $.Data.Tags .Tag }}
 type Controller interface {
     {{ range $paths -}}
         {{ range .Operations -}}
-            // {{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
+            //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
             {{ upFirst .OperationId }}(
-               {{ range .Parameters -}}
-                    {{- $type := convertToGoType .Type .Format -}}
-                    {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
-               {{- end }}
-            ) error
+               w http.ResponseWriter, r *http.Request) error
         {{ end -}}
     {{ end }}
 }

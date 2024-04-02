@@ -5,7 +5,7 @@ import (
 )
 
 {{ $paths := index $.Data.Tags .Tag }}
-type Service interface {
+type Repository interface {
     {{ range $paths -}}
         {{ range .Operations -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}

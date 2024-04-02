@@ -7,6 +7,7 @@ import (
 	"generator/internal/generator/filesystem"
 	openapiParser "generator/internal/generator/parser"
 	"generator/internal/generator/templates"
+	"generator/internal/generator/templates/common"
 	"generator/internal/generator/templates/models"
 	"generator/internal/logger"
 	"path"
@@ -35,6 +36,10 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("generate: %e", err)
 	}
 
+	if err := g.generateMain(); err != nil {
+		return fmt.Errorf("generate: %e", err)
+	}
+
 	if err := g.generateModels(); err != nil {
 		return fmt.Errorf("generate: %e", err)
 	}
@@ -43,6 +48,17 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("generate: %e", err)
 	}
 
+	return nil
+}
+
+func (g *Generator) generateMain() error {
+	if err := templates.RunTemplate(&templates.TemplateData{
+		Template: common.Main(),
+		FilePath: path.Join(filesystem.PathToApp, "main.go"),
+		Data:     definitions.GetData(),
+	}); err != nil {
+		return fmt.Errorf("generateMain: %e", err)
+	}
 	return nil
 }
 

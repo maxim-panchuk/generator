@@ -1,0 +1,16 @@
+package custom
+
+import (
+    {{ .Tag }}Service "{{ getRootFolderPath }}/internal/service/{{ .Tag }}"
+    "{{ getRootFolderPath }}/internal/transport/http/in/{{ .Tag }}/generated"
+)
+
+type ControllerImpl struct {
+	*generated.ControllerImpl
+}
+
+func NewController(service {{ .Tag }}Service.Service) *ControllerImpl {
+	return &ControllerImpl{
+		ControllerImpl: generated.NewController(service),
+	}
+}

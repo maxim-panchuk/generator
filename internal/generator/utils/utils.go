@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"generator/config"
 	"generator/internal/generator/definitions"
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	"github.com/pb33f/libopenapi/orderedmap"
@@ -25,13 +26,17 @@ func LowFirst(s string) string {
 	return firstCharLower + s[1:]
 }
 
+func GetRootFolderPath() string {
+	return config.Get().PathToRepositoryRoot
+}
+
 func GetResponse(op *definitions.Operation) string {
 	for _, resp := range op.Responses {
 		if resp.Content != nil {
 			if resp.IsArray {
-				return fmt.Sprintf("([]*models.%s, error)", resp.Content.ModelName)
+				return fmt.Sprintf("([]*models.%sDTO, error)", resp.Content.ModelName)
 			} else {
-				return fmt.Sprintf("(*models.%s, error)", resp.Content.ModelName)
+				return fmt.Sprintf("(*models.%sDTO, error)", resp.Content.ModelName)
 			}
 		}
 	}

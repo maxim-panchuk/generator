@@ -9,7 +9,6 @@ import (
 	"generator/internal/generator/templates/layer/controller"
 	"generator/internal/generator/templates/layer/repository"
 	"generator/internal/generator/templates/layer/service"
-	"generator/internal/logger"
 	"path"
 	"text/template"
 )
@@ -38,8 +37,15 @@ func (g *CrudGen) Generate() error {
 			Tag:  tag,
 			Data: g.Data,
 		}).withService()
-		logger.Info(fmt.Sprintf("gen service layer for: %s", tag))
 		if err := serviceGenerator.genLayer(); err != nil {
+			return fmt.Errorf("generate: %e", err)
+		}
+
+		repositoryGenerator := newLayerGenerator(tag, &LayerData{
+			Tag:  tag,
+			Data: g.Data,
+		}).withRepository()
+		if err := repositoryGenerator.genLayer(); err != nil {
 			return fmt.Errorf("generate: %e", err)
 		}
 	}
@@ -48,7 +54,6 @@ func (g *CrudGen) Generate() error {
 
 type Template interface {
 	Interface() *template.Template
-	GeneratedImpl() *template.Template
 	GeneratedInit() *template.Template
 	CustomInit() *template.Template
 }
@@ -96,9 +101,9 @@ func (g *LayerGenerator) genLayer() error {
 		return fmt.Errorf("genLayer: %w", err)
 	}
 
-	//if err := g.genLayerDefaultImpl(); err != nil {
-	//	return fmt.Errorf("genLayer: %w", err)
-	//}
+	if err := g.genLayerDefaultImpl(); err != nil {
+		return fmt.Errorf("genLayer: %w", err)
+	}
 
 	return nil
 }
@@ -152,42 +157,46 @@ func (g *LayerGenerator) genLayerInterface() error {
 	return nil
 }
 
-//func (g *LayerGenerator) genLayerDefaultImpl() error {
-//	if err := g.genLayerInits(); err != nil {
-//		return fmt.Errorf("genLayerDefaultImpl: %w", err)
-//	}
-//	if err := g.genLayerOperations(); err != nil {
-//		return fmt.Errorf("genLayerDefaultImpl: %w", err)
-//	}
-//
-//	return nil
-//}
+func (g *LayerGenerator) genLayerDefaultImpl() error {
+	if err := g.genLayerInits(); err != nil {
+		return fmt.Errorf("genLayerDefaultImpl: %w", err)
+	}
+	return nil
+}
 
-//func (g *LayerGenerator) genLayerInits() error {
-//	if err := g.genLayerGeneratedInit(); err != nil {
-//		return fmt.Errorf("genLayerInits: %w", err)
-//	}
-//	if err := g.genLayerCustomInit(); err != nil {
-//		return fmt.Errorf("genLayerInits: %w", err)
-//	}
-//	return nil
-//}
+func (g *LayerGenerator) genLayerInits() error {
+	if err := g.genLayerGeneratedInit(); err != nil {
+		return fmt.Errorf("genLayerInits: %w", err)
+	}
+	if err := g.genLayerCustomInit(); err != nil {
+		return fmt.Errorf("genLayerInits: %w", err)
+	}
+	return nil
+}
 
-//func (g *LayerGenerator) genLayerGeneratedInit() error {
-//	p := path.Join(g.getPathToGenerated(), g.tag+".go")
-//	if err := g.runTemplate(p, g.tmpl.GeneratedInit()); err != nil {
-//		return fmt.Errorf("genLayerGeneratedInit: %w", err)
-//	}
-//	return nil
-//}
+func (g *LayerGenerator) genLayerGeneratedInit() error {
+	p := path.Join(g.getPathToGenerated(), g.tag+".go")
+	if err := templates.RunTemplate(&templates.TemplateData{
+		Template: g.tmpl.GeneratedInit(),
+		FilePath: p,
+		Data:     g.data,
+	}); err != nil {
+		return fmt.Errorf("genLayerGeneratedInit: %w", err)
+	}
+	return nil
+}
 
-//func (g *LayerGenerator) genLayerCustomInit() error {
-//	p := path.Join(g.getPathToCustom(), g.tag+".go")
-//	if err := g.runTemplate(p, g.tmpl.CustomInit()); err != nil {
-//		return fmt.Errorf("genLayerCustomInit: %w", err)
-//	}
-//	return nil
-//}
+func (g *LayerGenerator) genLayerCustomInit() error {
+	p := path.Join(g.getPathToCustom(), g.tag+".go")
+	if err := templates.RunTemplate(&templates.TemplateData{
+		Template: g.tmpl.CustomInit(),
+		FilePath: p,
+		Data:     g.data,
+	}); err != nil {
+		return fmt.Errorf("genLayerCustomInit: %w", err)
+	}
+	return nil
+}
 
 func (g *LayerGenerator) getPathToDirBo() string {
 	return path.Join(g.targetLayerDirPath, g.tag)

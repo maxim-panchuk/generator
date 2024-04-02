@@ -1,0 +1,13 @@
+package generated
+
+import (
+    {{ .Tag }}Service "{{ getRootFolderPath }}/internal/service/{{ .Tag }}"
+)
+
+type ControllerImpl struct {
+	service {{ .Tag }}Service.Service
+}
+
+func NewController(service {{ .Tag }}Service.Service) *ControllerImpl {
+	return &ControllerImpl{service: service}
+}

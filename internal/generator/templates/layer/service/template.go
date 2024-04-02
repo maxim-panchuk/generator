@@ -19,10 +19,11 @@ func (t *Template) Interface() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"lowFirst":        utils.LowFirst,
-		"upFirst":         utils.UpFirst,
-		"convertToGoType": utils.ConvertToGoType,
-		"getResponse":     utils.GetResponse,
+		"lowFirst":          utils.LowFirst,
+		"upFirst":           utils.UpFirst,
+		"convertToGoType":   utils.ConvertToGoType,
+		"getResponse":       utils.GetResponse,
+		"getRootFolderPath": utils.GetRootFolderPath,
 	}
 
 	tmpl, err := template.New("service interface").Funcs(funcMap).Parse(string(f))
@@ -33,14 +34,42 @@ func (t *Template) Interface() *template.Template {
 	return tmpl
 }
 
-func (t *Template) GeneratedImpl() *template.Template {
-	return nil
-}
-
 func (t *Template) GeneratedInit() *template.Template {
-	return nil
+	f, err := os.ReadFile("internal/generator/templates/layer/service/generated.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	funcMap := template.FuncMap{
+		"lowFirst":          utils.LowFirst,
+		"upFirst":           utils.UpFirst,
+		"convertToGoType":   utils.ConvertToGoType,
+		"getResponse":       utils.GetResponse,
+		"getRootFolderPath": utils.GetRootFolderPath,
+	}
+
+	tmpl, err := template.New("service generated init").Funcs(funcMap).Parse(string(f))
+	if err != nil {
+		panic(err)
+	}
+
+	return tmpl
 }
 
 func (t *Template) CustomInit() *template.Template {
-	return nil
+	f, err := os.ReadFile("internal/generator/templates/layer/service/custom.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	funcMap := template.FuncMap{
+		"getRootFolderPath": utils.GetRootFolderPath,
+	}
+
+	tmpl, err := template.New("service custom init").Funcs(funcMap).Parse(string(f))
+	if err != nil {
+		panic(err)
+	}
+
+	return tmpl
 }

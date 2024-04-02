@@ -1,15 +1,23 @@
-package {{ .Tag }}
+package generated
 
 import (
+    "gorm.io/gorm"
     "{{ getRootFolderPath }}/internal/models"
 )
 
+type RepositoryImpl struct {
+	Db *gorm.DB
+}
+
+func NewRepository(db *gorm.DB) *RepositoryImpl {
+	return &RepositoryImpl{db}
+}
+
 {{ $paths := index $.Data.Tags .Tag }}
-type Service interface {
-    {{ range $paths -}}
-        {{ range .Operations -}}
+{{ range $paths -}}
+    {{ range .Operations -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
-            {{ upFirst .OperationId }}(
+            func (s *RepositoryImpl) {{ upFirst .OperationId }}(
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}
@@ -22,7 +30,8 @@ type Service interface {
                     {{ $type := convertToGoType .Type .Format }}
                     {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
                {{- end }}
-            ) {{ getResponse . }}
-        {{ end -}}
-    {{ end }}
-}
+            ) {{ getResponse . }} {
+                panic("not implemented")
+            }
+    {{ end -}}
+{{ end }}
