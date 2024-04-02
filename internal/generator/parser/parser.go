@@ -75,6 +75,7 @@ func (p *Parser) iterateCruds(tag string, cruds *orderedmap.Map[string, *v3.Oper
 			continue
 		}
 		op, err := p.buildOperation(opv3)
+		op.Type = pair.Key()
 		if err != nil {
 			return nil, fmt.Errorf("iterateCruds: %s", pair.Key())
 		}

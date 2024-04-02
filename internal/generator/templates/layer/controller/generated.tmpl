@@ -2,6 +2,7 @@ package generated
 
 import (
     {{ .Tag }}Service "{{ getRootFolderPath }}/internal/service/{{ .Tag }}"
+    "net/http"
 )
 
 type ControllerImpl struct {
@@ -11,3 +12,14 @@ type ControllerImpl struct {
 func NewController(service {{ .Tag }}Service.Service) *ControllerImpl {
 	return &ControllerImpl{service: service}
 }
+
+{{ $paths := index $.Data.Tags .Tag }}
+{{ range $paths -}}
+    {{ range .Operations -}}
+        //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
+        func (c *ControllerImpl) {{ upFirst .OperationId }}(
+           w http.ResponseWriter, r *http.Request) {
+                panic("not implemented")
+           }
+    {{ end -}}
+{{ end }}

@@ -104,3 +104,19 @@ func ConvertToGoType(swaggerType, swaggerFormat string) string {
 		return swaggerType
 	}
 }
+
+func ContainsTime(model *definitions.Model) bool {
+	containsTime := false
+	if model.PropKeys != nil && len(model.PropKeys) > 0 {
+		for _, key := range model.PropKeys {
+			pair, _ := model.Properties.Get(key)
+			if ContainsTime(pair) {
+				containsTime = true
+			}
+		}
+	}
+	if ConvertToGoType(model.Type, model.Format) == "time.Time" {
+		containsTime = true
+	}
+	return containsTime
+}

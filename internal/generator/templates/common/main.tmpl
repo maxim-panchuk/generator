@@ -1,6 +1,8 @@
 package main
 
 import (
+    "github.com/gorilla/mux"
+    "net/http"
     "{{ getRootFolderPath }}/configs/database/postgres"
     {{ range $tag, $paths := .Tags }}
         {{ $tag }}RepoImport "{{ getRootFolderPath }}/internal/database/repositories/{{ $tag }}"
@@ -16,4 +18,38 @@ func main() {
         {{ $tag }}Service := {{ $tag }}ServiceImport.NewService({{ $tag }}Repo)
         {{ $tag }}Controller := {{ $tag }}ControllerImport.NewController({{ $tag }}Service)
     {{ end }}
+
+    r := mux.NewRouter()
+
+    initApiEndpoints(
+        {{ range $tag, $paths := .Tags -}}
+            {{ $tag }}Controller,
+        {{ end -}}
+        r,
+    )
+
+    srv := &http.Server{
+    	Addr:    "127.0.0.1:8080",
+    	Handler: r,
+    }
+
+    if err := srv.ListenAndServe(); err != nil {
+    	panic(err)
+    }
+}
+
+func initApiEndpoints(
+    {{ range $tag, $paths := .Tags -}}
+        {{ $tag }} {{ $tag }}ControllerImport.Controller,
+    {{ end -}}
+    r *mux.Router,
+) {
+    {{ range $tag, $paths := .Tags -}}
+        {{ range $path := $paths -}}
+            {{- $url := $path.Url -}}
+            {{- range $op := $path.Operations -}}
+                r.HandleFunc("{{ $url }}", {{ $tag }}.{{ upFirst $op.OperationId }}).Methods("{{ toUpper $op.Type }}")
+            {{ end -}}
+        {{ end -}}
+    {{ end -}}
 }

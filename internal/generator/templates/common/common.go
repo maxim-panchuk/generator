@@ -3,6 +3,7 @@ package common
 import (
 	"generator/internal/generator/utils"
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -16,6 +17,7 @@ func Main() *template.Template {
 		"upFirst":           utils.UpFirst,
 		"convertToGoType":   utils.ConvertToGoType,
 		"getRootFolderPath": utils.GetRootFolderPath,
+		"toUpper":           strings.ToUpper,
 	}
 
 	tmpl, err := template.New("controller interface").Funcs(funcMap).Parse(string(f))

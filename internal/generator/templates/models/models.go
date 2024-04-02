@@ -16,6 +16,7 @@ func Models() *template.Template {
 		"upFirst":         utils.UpFirst,
 		"getField":        utils.GetField,
 		"getDtoFieldType": utils.GetDtoFieldType,
+		"containsTime":    utils.ContainsTime,
 	}
 
 	tmpl, err := template.New("models").Funcs(funcMap).Parse(string(f))

@@ -1,9 +1,14 @@
 package models
 
+{{- $containsTime := containsTime . -}}
+{{ if $containsTime }}
+import "time"
+{{ end }}
+
 {{ if .Description }} {{- .Description }} {{ end }}
 type {{ .ModelName }}DTO struct {
     {{ range $fieldName := .PropKeys -}}
-        {{- $field := getField $fieldName $.Properties }}
+        {{- $field := getField $fieldName $.Properties -}}
         {{ upFirst $fieldName }} {{ getDtoFieldType $field }} `json:"{{ $fieldName }}"` {{ if $field.Description -}} // {{ $field.Description }} {{- end }}
     {{ end }}
 }
