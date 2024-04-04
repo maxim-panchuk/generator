@@ -1,33 +1,40 @@
 package generated
 
+{{- $dpList := getTagDependencies .Tag }}
 import (
+     {{- if gt (len $dpList ) 0 }}
+         {{- range $idx, $el := $dpList }}
+             "{{ getRootFolderPath }}/internal/models/{{ $el }}"
+         {{- end }}
+     {{- end }}
      {{ .Tag }}Repository "{{ getRootFolderPath }}/internal/database/repositories/{{ .Tag }}"
-     "{{ getRootFolderPath }}/internal/models"
      "context"
 )
 
 type ServiceImpl struct {
-	Repo {{ .Tag }}Repository.Repository
+	repo {{ .Tag }}Repository.Repository
 }
 
 func NewService(repo {{ .Tag }}Repository.Repository) *ServiceImpl {
 	return &ServiceImpl{
-		Repo: repo,
+		repo: repo,
 	}
 }
 
 {{ $paths := index $.Data.Tags .Tag }}
 {{ range $paths -}}
     {{ range .Operations -}}
+            {{- $currOperation := . -}}
+            {{- $responseContainsSchema := responseContainsSchema . -}}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
             func (s *ServiceImpl) {{ upFirst .OperationId }}(
                 ctx context.Context,
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}
-                        {{ lowFirst $modelName }}DTO []*models.{{ $modelName }}DTO, // {{ .Description }}
+                        {{ lowFirst $modelName }}DTO []*{{ lowFirst $modelName }}.{{ $modelName }}DTO, // {{ .Description }}
                     {{ else -}}
-                        {{ lowFirst $modelName }}DTO *models.{{ $modelName }}DTO,
+                        {{ lowFirst $modelName }}DTO *{{ lowFirst $modelName }}.{{ $modelName }}DTO,
                     {{- end }}
                {{- end }}
                {{- range .Parameters -}}
@@ -35,7 +42,38 @@ func NewService(repo {{ .Tag }}Repository.Repository) *ServiceImpl {
                     {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
                {{- end }}
             ) {{ getResponse . }} {
-                panic("not implemented")
+                {{- if not .IsTypical }}
+                    panic("not implemented")
+                {{ else }}
+                    {{- if $responseContainsSchema }}
+                        dto, err := s.repo.{{ upFirst $currOperation.OperationId }}(
+                            ctx,
+                            {{- if .RequestBody -}}
+                                {{ lowFirst .RequestBody.Content.ModelName }}DTO,
+                            {{- end }}
+                            {{- range .Parameters -}}
+                                {{ .Name }},
+                            {{- end }}
+                        )
+                        if err != nil {
+                            return nil, err
+                        }
+                        return dto, nil
+                    {{ else }}
+                        if err := s.repo.{{ upFirst $currOperation.OperationId }}(
+                            ctx,
+                            {{- if .RequestBody -}}
+                                {{ lowFirst .RequestBody.Content.ModelName }}DTO,
+                            {{- end }}
+                            {{- range .Parameters -}}
+                                {{ .Name }},
+                            {{- end }}
+                        ); err != nil {
+                            return err
+                        }
+                        return nil
+                    {{ end }}
+                {{ end -}}
             }
     {{ end -}}
 {{ end }}

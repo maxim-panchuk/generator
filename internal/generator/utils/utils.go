@@ -33,10 +33,12 @@ func GetRootFolderPath() string {
 func GetResponse(op *definitions.Operation) string {
 	for _, resp := range op.Responses {
 		if resp.Content != nil {
+			mn := resp.Content.ModelName
+			dp := LowFirst(mn)
 			if resp.IsArray {
-				return fmt.Sprintf("([]*models.%sDTO, error)", resp.Content.ModelName)
+				return fmt.Sprintf("([]*%s.%sDTO, error)", dp, mn)
 			} else {
-				return fmt.Sprintf("(*models.%sDTO, error)", resp.Content.ModelName)
+				return fmt.Sprintf("(*%s.%sDTO, error)", dp, mn)
 			}
 		}
 	}
@@ -51,11 +53,76 @@ func GetField(fieldName string, p orderedmap.Map[string, *definitions.Model]) *d
 	return model
 }
 
+func GetModelDependencies(model *definitions.Model) []string {
+	d := make([]string, 0)
+	for pair := model.Properties.First(); pair != nil; pair = pair.Next() {
+		m := pair.Value()
+		if ref := m.GetReference(); ref != "" {
+			defName := GetDefinitionNameFromRef(ref)
+			d = append(d, LowFirst(defName))
+		}
+	}
+	return d
+}
+
+func GetTagDependencies(tag string) []string {
+	dpSet := make(map[string]struct{})
+	paths := definitions.GetData().Tags[tag]
+	for _, path := range paths {
+		ops := path.Operations
+		for _, op := range ops {
+			rb := op.RequestBody
+			if rb != nil && rb.Content != nil {
+				dpSet[LowFirst(rb.Content.ModelName)] = struct{}{}
+			}
+			rspList := op.Responses
+			for _, rsp := range rspList {
+				if rsp.Content != nil {
+					dpSet[LowFirst(rsp.Content.ModelName)] = struct{}{}
+				}
+			}
+		}
+	}
+	return setToList(dpSet)
+}
+
+func GetControllerTagDependencies(tag string) []string {
+	dpSet := make(map[string]struct{})
+	paths := definitions.GetData().Tags[tag]
+	for _, path := range paths {
+		ops := path.Operations
+		for _, op := range ops {
+			if !op.IsTypical {
+				continue
+			}
+			rb := op.RequestBody
+			if rb != nil && rb.Content != nil {
+				dpSet[LowFirst(rb.Content.ModelName)] = struct{}{}
+			}
+			rspList := op.Responses
+			for _, rsp := range rspList {
+				if rsp.Content != nil {
+					dpSet[LowFirst(rsp.Content.ModelName)] = struct{}{}
+				}
+			}
+		}
+	}
+	return setToList(dpSet)
+}
+
+func setToList(set map[string]struct{}) []string {
+	slice := make([]string, 0, len(set))
+	for key, _ := range set {
+		slice = append(slice, key)
+	}
+	return slice
+}
+
 func GetDtoFieldType(model *definitions.Model) string {
 	if model.Type == "object" {
 		if ref := model.GetReference(); ref != "" {
 			definitionName := GetDefinitionNameFromRef(ref)
-			return "*" + definitionName + "DTO"
+			return "*" + LowFirst(definitionName) + "." + definitionName + "DTO"
 		}
 	}
 	if model.Type == "array" {
@@ -119,4 +186,64 @@ func ContainsTime(model *definitions.Model) bool {
 		containsTime = true
 	}
 	return containsTime
+}
+
+func ContainsPathParameters(op *definitions.Operation) bool {
+	for _, p := range op.Parameters {
+		if p.In == "path" {
+			return true
+		}
+	}
+	return false
+}
+
+func GetResponseByCode(code string, op *definitions.Operation) *definitions.Response {
+	for _, r := range op.Responses {
+		if r.Code == code {
+			return r
+		}
+	}
+	panic(fmt.Sprintf("GetResponseByCode op: %s, code: %s", op.OperationId, code))
+}
+
+func ResponseContainsSchema(op *definitions.Operation) bool {
+	for _, r := range op.Responses {
+		if r.Content != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func ContainsEnum(model *definitions.Model) bool {
+	for pair := model.Properties.First(); pair != nil; pair = pair.Next() {
+		m := pair.Value()
+		if m.IsEnum {
+			return true
+		}
+	}
+	return false
+}
+
+func GetModelEnums(model *definitions.Model) []*definitions.Model {
+	enums := make([]*definitions.Model, 0)
+	for pair := model.Properties.First(); pair != nil; pair = pair.Next() {
+		m := pair.Value()
+		if m.IsEnum {
+			enums = append(enums, m)
+		}
+	}
+	return enums
+}
+
+func TagContainsTypicalOperation(tag string) bool {
+	paths := definitions.GetData().Tags[tag]
+	for _, path := range paths {
+		for _, op := range path.Operations {
+			if op.IsTypical {
+				return true
+			}
+		}
+	}
+	return false
 }

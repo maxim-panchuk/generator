@@ -14,6 +14,8 @@ type Model struct {
 	Properties  *orderedmap.Map[string, *Model]
 	Items       *Model
 	Ref         string
+	IsEnum      bool
+	EnumValues  []interface{}
 }
 
 func (m *Model) GetReference() (ref string) {

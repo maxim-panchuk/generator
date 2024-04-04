@@ -1,8 +1,13 @@
 package generated
 
+{{- $dpList := getTagDependencies .Tag }}
 import (
+    {{- if gt (len $dpList ) 0 }}
+        {{- range $idx, $el := $dpList }}
+            "{{ getRootFolderPath }}/internal/models/{{ $el }}"
+        {{- end }}
+    {{- end }}
     "gorm.io/gorm"
-    "{{ getRootFolderPath }}/internal/models"
     "context"
 )
 
@@ -23,9 +28,9 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
                     {{ if .RequestBody.IsArray -}}
-                        {{ lowFirst $modelName }}DTO []*models.{{ $modelName }}DTO, // {{ .Description }}
+                        {{ lowFirst $modelName }}DTO []*{{ lowFirst $modelName }}.{{ $modelName }}DTO, // {{ .Description }}
                     {{ else -}}
-                        {{ lowFirst $modelName }}DTO *models.{{ $modelName }}DTO,
+                        {{ lowFirst $modelName }}DTO *{{ lowFirst $modelName }}.{{ $modelName }}DTO,
                     {{- end }}
                {{- end }}
                {{- range .Parameters -}}

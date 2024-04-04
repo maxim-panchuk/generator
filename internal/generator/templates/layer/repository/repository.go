@@ -19,11 +19,12 @@ func (t *Template) Interface() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"lowFirst":          utils.LowFirst,
-		"upFirst":           utils.UpFirst,
-		"convertToGoType":   utils.ConvertToGoType,
-		"getResponse":       utils.GetResponse,
-		"getRootFolderPath": utils.GetRootFolderPath,
+		"lowFirst":           utils.LowFirst,
+		"upFirst":            utils.UpFirst,
+		"convertToGoType":    utils.ConvertToGoType,
+		"getResponse":        utils.GetResponse,
+		"getRootFolderPath":  utils.GetRootFolderPath,
+		"getTagDependencies": utils.GetTagDependencies,
 	}
 
 	tmpl, err := template.New("repository interface").Funcs(funcMap).Parse(string(f))
@@ -41,11 +42,12 @@ func (t *Template) GeneratedInit() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"lowFirst":          utils.LowFirst,
-		"upFirst":           utils.UpFirst,
-		"convertToGoType":   utils.ConvertToGoType,
-		"getResponse":       utils.GetResponse,
-		"getRootFolderPath": utils.GetRootFolderPath,
+		"lowFirst":           utils.LowFirst,
+		"upFirst":            utils.UpFirst,
+		"convertToGoType":    utils.ConvertToGoType,
+		"getResponse":        utils.GetResponse,
+		"getRootFolderPath":  utils.GetRootFolderPath,
+		"getTagDependencies": utils.GetTagDependencies,
 	}
 
 	tmpl, err := template.New("repository interface").Funcs(funcMap).Parse(string(f))

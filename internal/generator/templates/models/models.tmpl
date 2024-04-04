@@ -1,8 +1,30 @@
-package models
+package {{ lowFirst .ModelName }}
 
+{{- $modelEnums := getModelEnums . -}}
 {{- $containsTime := containsTime . -}}
-{{ if $containsTime }}
-import "time"
+{{- $modelDependencies := getModelDependencies . }}
+
+import (
+    {{ if $containsTime }}
+    "time"
+    {{ end }}
+    {{ if gt (len $modelDependencies ) 0 }}
+        {{ range $idx, $el := $modelDependencies }}
+            "{{ getRootFolderPath }}/internal/models/{{ $el }}"
+        {{ end }}
+    {{ end }}
+)
+
+{{ if gt (len $modelEnums) 0 }}
+     {{- range $modelEnums }}
+        {{- $modelName := .ModelName }}
+            type {{ upFirst $modelName }} {{ getDtoFieldType . }}
+            const (
+                {{ range $idx, $el := .EnumValues -}}
+                    {{ toUpper $el }} {{ upFirst $modelName }} = "{{ $el }}"
+                {{ end }}
+            )
+     {{ end }}
 {{ end }}
 
 {{ if .Description }} {{- .Description }} {{ end }}

@@ -266,6 +266,17 @@ func (p *Parser) parseModel(schemaProxy *base.SchemaProxy, schemaName string) (*
 		Type:        schema.Type[0],
 		Format:      schema.Format,
 		Description: schema.Description,
+		IsEnum:      false,
+		EnumValues:  nil,
+	}
+
+	if schema.Enum != nil && len(schema.Enum) > 0 {
+		enumValues := make([]interface{}, 0, len(schema.Enum))
+		for _, enum := range schema.Enum {
+			enumValues = append(enumValues, enum.Value)
+		}
+		model.EnumValues = enumValues
+		model.IsEnum = true
 	}
 
 	if ref := schemaProxy.GetReference(); ref != "" {

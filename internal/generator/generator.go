@@ -9,6 +9,7 @@ import (
 	"generator/internal/generator/templates"
 	"generator/internal/generator/templates/common"
 	"generator/internal/generator/templates/models"
+	"generator/internal/generator/utils"
 	"generator/internal/logger"
 	"path"
 )
@@ -65,9 +66,12 @@ func (g *Generator) generateMain() error {
 func (g *Generator) generateModels() error {
 	for modelName, model := range definitions.GetData().Models {
 		logger.Info(fmt.Sprintf("generate model: %s", modelName))
+		if err := filesystem.CreateDir(path.Join(filesystem.PathToModel, utils.LowFirst(model.ModelName))); err != nil {
+			return fmt.Errorf("generate models: %e", err)
+		}
 		if err := templates.RunTemplate(&templates.TemplateData{
 			Template: models.Models(),
-			FilePath: path.Join(filesystem.PathToModel, model.ModelName+".go"),
+			FilePath: path.Join(filesystem.PathToModel, utils.LowFirst(model.ModelName), model.ModelName+".go"),
 			Data:     model,
 		}); err != nil {
 			return fmt.Errorf("generate models: %e", err)

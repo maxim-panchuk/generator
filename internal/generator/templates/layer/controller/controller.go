@@ -39,9 +39,15 @@ func (t *Template) GeneratedInit() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"upFirst":           utils.UpFirst,
-		"convertToGoType":   utils.ConvertToGoType,
-		"getRootFolderPath": utils.GetRootFolderPath,
+		"upFirst":                      utils.UpFirst,
+		"lowFirst":                     utils.LowFirst,
+		"convertToGoType":              utils.ConvertToGoType,
+		"getRootFolderPath":            utils.GetRootFolderPath,
+		"containsPathParameters":       utils.ContainsPathParameters,
+		"getResponseByCode":            utils.GetResponseByCode,
+		"responseContainsSchema":       utils.ResponseContainsSchema,
+		"tagContainsTypicalOperation":  utils.TagContainsTypicalOperation,
+		"getControllerTagDependencies": utils.GetControllerTagDependencies,
 	}
 
 	tmpl, err := template.New("controller interface").Funcs(funcMap).Parse(string(f))
