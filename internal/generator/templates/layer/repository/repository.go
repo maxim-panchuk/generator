@@ -42,15 +42,16 @@ func (t *Template) GeneratedInit() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"lowFirst":           utils.LowFirst,
-		"upFirst":            utils.UpFirst,
-		"convertToGoType":    utils.ConvertToGoType,
-		"getResponse":        utils.GetResponse,
-		"getRootFolderPath":  utils.GetRootFolderPath,
-		"getTagDependencies": utils.GetTagDependencies,
+		"lowFirst":             utils.LowFirst,
+		"upFirst":              utils.UpFirst,
+		"convertToGoType":      utils.ConvertToGoType,
+		"getResponse":          utils.GetResponse,
+		"getRootFolderPath":    utils.GetRootFolderPath,
+		"getTagDependencies":   utils.GetTagDependencies,
+		"getOperationCrudType": utils.GetOperationCrudType,
 	}
 
-	tmpl, err := template.New("repository interface").Funcs(funcMap).Parse(string(f))
+	tmpl, err := template.New("repository generated").Funcs(funcMap).Parse(string(f))
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +69,7 @@ func (t *Template) CustomInit() *template.Template {
 		"getRootFolderPath": utils.GetRootFolderPath,
 	}
 
-	tmpl, err := template.New("repository interface").Funcs(funcMap).Parse(string(f))
+	tmpl, err := template.New("repository custom").Funcs(funcMap).Parse(string(f))
 	if err != nil {
 		panic(err)
 	}

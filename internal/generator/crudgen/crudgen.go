@@ -9,6 +9,7 @@ import (
 	"generator/internal/generator/templates/layer/controller"
 	"generator/internal/generator/templates/layer/repository"
 	"generator/internal/generator/templates/layer/service"
+	"generator/internal/logger"
 	"path"
 	"text/template"
 )
@@ -29,6 +30,7 @@ func (g *CrudGen) Generate() error {
 			Tag:  tag,
 			Data: g.Data,
 		}).withController()
+		logger.Info(fmt.Sprintf("generate controller: %s", tag))
 		if err := controllerGenerator.genLayer(); err != nil {
 			return fmt.Errorf("generate: %e", err)
 		}
@@ -37,6 +39,7 @@ func (g *CrudGen) Generate() error {
 			Tag:  tag,
 			Data: g.Data,
 		}).withService()
+		logger.Info(fmt.Sprintf("generate service: %s", tag))
 		if err := serviceGenerator.genLayer(); err != nil {
 			return fmt.Errorf("generate: %e", err)
 		}
@@ -45,6 +48,7 @@ func (g *CrudGen) Generate() error {
 			Tag:  tag,
 			Data: g.Data,
 		}).withRepository()
+		logger.Info(fmt.Sprintf("generate repository: %s", tag))
 		if err := repositoryGenerator.genLayer(); err != nil {
 			return fmt.Errorf("generate: %e", err)
 		}
@@ -146,6 +150,7 @@ func (g *LayerGenerator) mkdirCustom() error {
 }
 
 func (g *LayerGenerator) genLayerInterface() error {
+	logger.Info("generate interface")
 	p := path.Join(g.targetLayerDirPath, g.tag, g.tag+".go")
 	if err := templates.RunTemplate(&templates.TemplateData{
 		Template: g.tmpl.Interface(),
@@ -175,6 +180,7 @@ func (g *LayerGenerator) genLayerInits() error {
 }
 
 func (g *LayerGenerator) genLayerGeneratedInit() error {
+	logger.Info("generate layer generated init")
 	p := path.Join(g.getPathToGenerated(), g.tag+".go")
 	if err := templates.RunTemplate(&templates.TemplateData{
 		Template: g.tmpl.GeneratedInit(),
@@ -187,6 +193,7 @@ func (g *LayerGenerator) genLayerGeneratedInit() error {
 }
 
 func (g *LayerGenerator) genLayerCustomInit() error {
+	logger.Info("generate layer custom init")
 	p := path.Join(g.getPathToCustom(), g.tag+".go")
 	if err := templates.RunTemplate(&templates.TemplateData{
 		Template: g.tmpl.CustomInit(),

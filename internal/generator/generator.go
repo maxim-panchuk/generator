@@ -8,6 +8,7 @@ import (
 	openapiParser "generator/internal/generator/parser"
 	"generator/internal/generator/templates"
 	"generator/internal/generator/templates/common"
+	"generator/internal/generator/templates/mapper"
 	"generator/internal/generator/templates/models"
 	"generator/internal/generator/utils"
 	"generator/internal/logger"
@@ -49,6 +50,10 @@ func (g *Generator) Generate() error {
 		return fmt.Errorf("generate: %e", err)
 	}
 
+	if err := g.generateMappers(); err != nil {
+		return fmt.Errorf("generate: %e", err)
+	}
+
 	return nil
 }
 
@@ -84,6 +89,26 @@ func (g *Generator) generateCruds() error {
 	crudGen := crudgen.New()
 	if err := crudGen.Generate(); err != nil {
 		return fmt.Errorf("generateCruds: %e", err)
+	}
+	return nil
+}
+
+func (g *Generator) generateMappers() error {
+	for modelName, model := range definitions.GetData().Models {
+		if model.XDb == nil {
+			continue
+		}
+		logger.Info(fmt.Sprintf("generate mapper: %s", modelName))
+		if err := filesystem.CreateDir(path.Join(filesystem.PathToMapper, utils.LowFirst(model.ModelName))); err != nil {
+			return fmt.Errorf("generate mappers: %e", err)
+		}
+		if err := templates.RunTemplate(&templates.TemplateData{
+			Template: mapper.Mapper(),
+			FilePath: path.Join(filesystem.PathToMapper, utils.LowFirst(model.ModelName), model.ModelName+".go"),
+			Data:     model,
+		}); err != nil {
+			return fmt.Errorf("generate mappers: %e", err)
+		}
 	}
 	return nil
 }

@@ -284,3 +284,10 @@ func GetAnnotationForEntityField(entityName string, m *definitions.Model) string
 	}
 	return "gorm:\"\""
 }
+
+func GetOperationCrudType(op *definitions.Operation) string {
+	if op.XMeta == nil {
+		return ""
+	}
+	return op.Type
+}

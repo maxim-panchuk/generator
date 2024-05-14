@@ -1,0 +1,70 @@
+package {{ lowFirst .ModelName }}
+
+{{- $containsTime := containsTime . -}}
+{{- $modelDependencies := getModelDependencies . }}
+
+import (
+    model "{{ getRootFolderPath }}/internal/models/{{ lowFirst .ModelName }}"
+    {{ if gt (len $modelDependencies ) 0 }}
+        {{ range $idx, $el := $modelDependencies }}
+            {{ $el }}Mapper "{{ getRootFolderPath }}/internal/mapper/{{ $el }}"
+        {{ end }}
+    {{ end }}
+    {{ range $fieldName := .PropKeys -}}
+        {{- $field := getField $fieldName $.Properties -}}
+        {{ if and $field.Items (eq $field.Items.Type "object") }}
+            {{ lowFirst $field.Items.ModelName }}Model "{{ getRootFolderPath}}/internal/models/{{ lowFirst $field.Items.ModelName }}"
+        {{ else if ( eq $field.Type "object" ) }}
+            {{ lowFirst $field.ModelName }}Model "{{ getRootFolderPath }}/internal/models/{{ lowFirst $field.ModelName }}"
+        {{ end }}
+    {{ end }}
+)
+
+func Convert{{ .ModelName }}DTOtoEntity(dto *model.{{ .ModelName }}DTO) *model.{{ .ModelName }}Entity {
+    return &model.{{ .ModelName }}Entity {
+        {{ range $fieldName := .PropKeys -}}
+            {{- $field := getField $fieldName $.Properties -}}
+            {{ if (eq $field.Type "object") }}
+                {{ upFirst $fieldName }}: func() []*{{ lowFirst $field.ModelName }}Model.{{ upFirst $field.ModelName }}Entity {
+                    return []*{{ lowFirst $field.ModelName }}Model.{{ upFirst $field.ModelName }}Entity{
+                        {{ lowFirst $field.ModelName }}Mapper.Convert{{ upFirst $field.ModelName }}DTOtoEntity(dto.{{ upFirst $fieldName }}),
+                    }
+                }(),
+                //{{ upFirst $fieldName }}: {{ lowFirst $field.ModelName }}Mapper.Convert{{ upFirst $field.ModelName }}DTOtoEntity(dto.{{ upFirst $fieldName }}[0]),
+            {{ else if and $field.Items (eq $field.Items.Type "object") }}
+                {{- $modelName := $field.Items.ModelName }}
+                {{ upFirst $fieldName }}: func() []*{{ lowFirst $modelName }}Model.{{ upFirst $modelName }}Entity  {
+                    slice := make([]*{{ lowFirst $modelName }}Model.{{ upFirst $modelName }}Entity, 0)
+                    for _, el := range dto.{{ upFirst $fieldName }} {
+                        slice = append(slice, {{ lowFirst $modelName }}Mapper.Convert{{ upFirst $modelName }}DTOtoEntity(el))
+                    }
+                    return slice
+                    }(),
+            {{ else }}
+                {{ upFirst $fieldName }}: dto.{{ upFirst $fieldName }},
+            {{ end }}
+        {{ end }}
+    }
+}
+
+func Convert{{ .ModelName }}EntityToDTO(entity *model.{{ .ModelName }}Entity) *model.{{ .ModelName }}DTO {
+    return &model.{{ .ModelName }}DTO {
+        {{ range $fieldName := .PropKeys -}}
+            {{- $field := getField $fieldName $.Properties -}}
+            {{ if (eq $field.Type "object") }}
+                {{ upFirst $fieldName }}: {{ lowFirst $field.ModelName }}Mapper.Convert{{ upFirst $field.ModelName }}EntityToDTO(entity.{{ upFirst $fieldName }}[0]),
+            {{ else if and $field.Items (eq $field.Items.Type "object") }}
+                {{- $modelName := $field.Items.ModelName }}
+                {{ upFirst $fieldName }}: func() []*{{ lowFirst $modelName }}Model.{{ upFirst $modelName }}DTO  {
+                    slice := make([]*{{ lowFirst $modelName }}Model.{{ upFirst $modelName }}DTO, 0)
+                    for _, el := range entity.{{ upFirst $fieldName }} {
+                        slice = append(slice, {{ lowFirst $modelName }}Mapper.Convert{{ upFirst $modelName }}EntityToDTO(el))
+                    }
+                    return slice
+                }(),
+            {{ else }}
+                {{ upFirst $fieldName }}: entity.{{ upFirst $fieldName }},
+            {{ end }}
+        {{ end }}
+    }
+}

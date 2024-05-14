@@ -22,8 +22,9 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
 {{ $paths := index $.Data.Tags .Tag }}
 {{ range $paths -}}
     {{ range .Operations -}}
+            {{ $xMeta := .XMeta }}
             //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
-            func (s *RepositoryImpl) {{ upFirst .OperationId }}(
+            func (r *RepositoryImpl) {{ upFirst .OperationId }}(
                 ctx context.Context,
                {{- if .RequestBody }}
                     {{- $modelName := .RequestBody.Content.ModelName }}
@@ -38,7 +39,16 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
                     {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
                {{- end }}
             ) {{ getResponse . }} {
-                panic("not implemented")
+                {{ if and $xMeta ( eq $xMeta.Type "findbyid" ) }}
+                {{ $id := index .Parameters 0 }}
+                var entity *{{ .Tag }}.{{ $xMeta.Model.ModelName }}Entity
+                if err := r.Db.WithContext(ctx).Preload(clause.Associations).First(&entity, {{ $id.Name }}).Error; err != nil {
+                    return nil, err
+                }
+                return nil, nil
+                {{ else }}
+                 panic("not implemented")
+                {{ end }}
             }
     {{ end -}}
 {{ end }}
