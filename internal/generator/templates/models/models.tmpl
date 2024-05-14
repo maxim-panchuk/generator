@@ -34,3 +34,14 @@ type {{ .ModelName }}DTO struct {
         {{ upFirst $fieldName }} {{ getDtoFieldType $field }} `json:"{{ $fieldName }}"` {{ if $field.Description -}} // {{ $field.Description }} {{- end }}
     {{ end }}
 }
+
+{{ if isModelEntity . }}
+{{- $modelName := lowFirst .ModelName -}}
+type {{ .ModelName }}Entity struct {
+    {{ range $fieldName := .PropKeys -}}
+        {{- $field := getField $fieldName $.Properties -}}
+        {{ upFirst $fieldName }} {{ getTypeForEntity $field }} `{{ getAnnotationForEntityField $modelName $field }}`
+    {{ end }}
+}
+
+{{ end }}

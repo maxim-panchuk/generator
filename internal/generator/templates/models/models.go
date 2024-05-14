@@ -14,15 +14,19 @@ func Models() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
-		"upFirst":              utils.UpFirst,
-		"lowFirst":             utils.LowFirst,
-		"getField":             utils.GetField,
-		"getDtoFieldType":      utils.GetDtoFieldType,
-		"containsTime":         utils.ContainsTime,
-		"getModelEnums":        utils.GetModelEnums,
-		"toUpper":              strings.ToUpper,
-		"getModelDependencies": utils.GetModelDependencies,
-		"getRootFolderPath":    utils.GetRootFolderPath,
+		"upFirst":                     utils.UpFirst,
+		"lowFirst":                    utils.LowFirst,
+		"getField":                    utils.GetField,
+		"getDtoFieldType":             utils.GetDtoFieldType,
+		"containsTime":                utils.ContainsTime,
+		"getModelEnums":               utils.GetModelEnums,
+		"toUpper":                     strings.ToUpper,
+		"getModelDependencies":        utils.GetModelDependencies,
+		"getRootFolderPath":           utils.GetRootFolderPath,
+		"isModelEntity":               utils.IsModelEntity,
+		"getModelPrimaryKeyField":     utils.GetModelPrimaryKeyField,
+		"getTypeForEntity":            utils.GetTypeForEntity,
+		"getAnnotationForEntityField": utils.GetAnnotationForEntityField,
 	}
 
 	tmpl, err := template.New("models").Funcs(funcMap).Parse(string(f))

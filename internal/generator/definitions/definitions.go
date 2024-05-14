@@ -5,6 +5,10 @@ import (
 	"sync"
 )
 
+type XDb struct {
+	PrimaryKey string `xml:"primary-key"`
+}
+
 type Model struct {
 	ModelName   string
 	Description string
@@ -16,6 +20,7 @@ type Model struct {
 	Ref         string
 	IsEnum      bool
 	EnumValues  []interface{}
+	XDb         *XDb
 }
 
 func (m *Model) GetReference() (ref string) {

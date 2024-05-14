@@ -118,20 +118,6 @@ func setToList(set map[string]struct{}) []string {
 	return slice
 }
 
-func GetDtoFieldType(model *definitions.Model) string {
-	if model.Type == "object" {
-		if ref := model.GetReference(); ref != "" {
-			definitionName := GetDefinitionNameFromRef(ref)
-			return "*" + LowFirst(definitionName) + "." + definitionName + "DTO"
-		}
-	}
-	if model.Type == "array" {
-		return "[]" + GetDtoFieldType(model.Items)
-	}
-
-	return ConvertToGoType(model.Type, model.Format)
-}
-
 func GetDefinitionNameFromRef(ref string) string {
 	parts := strings.Split(ref, "/")
 	return parts[len(parts)-1]
@@ -246,4 +232,55 @@ func TagContainsTypicalOperation(tag string) bool {
 		}
 	}
 	return false
+}
+
+func IsModelEntity(m *definitions.Model) bool {
+	return m.XDb != nil
+}
+
+func GetModelPrimaryKeyField(m *definitions.Model) string {
+	if m.XDb != nil && m.XDb.PrimaryKey != "" {
+		return UpFirst(m.XDb.PrimaryKey)
+	}
+	panic(fmt.Sprintf("model: %s does not have correct primary key declaration", m.ModelName))
+}
+
+func GetDtoFieldType(model *definitions.Model) string {
+	if model.Type == "object" {
+		if ref := model.GetReference(); ref != "" {
+			definitionName := GetDefinitionNameFromRef(ref)
+			return "*" + LowFirst(definitionName) + "." + definitionName + "DTO"
+		}
+	}
+	if model.Type == "array" {
+		return "[]" + GetDtoFieldType(model.Items)
+	}
+
+	return ConvertToGoType(model.Type, model.Format)
+}
+
+func GetTypeForEntity(m *definitions.Model) string {
+	if m.Type == "object" {
+		if ref := m.GetReference(); ref != "" {
+			schemaName := GetDefinitionNameFromRef(ref)
+			return "[]*" + LowFirst(schemaName) + "." + schemaName + "Entity"
+		}
+	}
+	if m.Type == "array" {
+		if m.Items.Type == "object" {
+			return GetTypeForEntity(m.Items)
+		}
+		return "[]" + GetDtoFieldType(m.Items)
+	}
+	return ConvertToGoType(m.Type, m.Format)
+}
+
+func GetAnnotationForEntityField(entityName string, m *definitions.Model) string {
+	if m.Type == "object" || m.Type == "array" && m.Items.Type == "object" {
+		if ref := m.GetReference(); ref != "" {
+			schemaName := GetDefinitionNameFromRef(ref)
+			return fmt.Sprintf("gorm:\"many2many:%s_%s\"", entityName, LowFirst(schemaName))
+		}
+	}
+	return "gorm:\"\""
 }

@@ -268,6 +268,7 @@ func (p *Parser) parseModel(schemaProxy *base.SchemaProxy, schemaName string) (*
 		Description: schema.Description,
 		IsEnum:      false,
 		EnumValues:  nil,
+		XDb:         extractXDb(schema),
 	}
 
 	if schema.Enum != nil && len(schema.Enum) > 0 {
@@ -310,6 +311,20 @@ func (p *Parser) parseModel(schemaProxy *base.SchemaProxy, schemaName string) (*
 		model.PropKeys = append(model.PropKeys, propName)
 	}
 	return model, nil
+}
+
+func extractXDb(s *base.Schema) *definitions.XDb {
+	node, ok := s.Extensions.Get("x-db")
+	if !ok {
+		return nil
+	}
+
+	xb := &definitions.XDb{}
+	if err := node.Decode(xb); err != nil {
+		panic(err)
+	}
+
+	return xb
 }
 
 func containsProperties(schema *base.Schema) bool {
