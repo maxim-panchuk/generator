@@ -1,10 +1,15 @@
 package generated
 
 {{- $dpList := getTagDependencies .Tag }}
+{{ $paths := index $.Data.Tags .Tag }}
 import (
     {{- if gt (len $dpList ) 0 }}
         {{- range $idx, $el := $dpList }}
             "{{ getRootFolderPath }}/internal/models/{{ $el }}"
+            {{- $model := index $.Data.Models (upFirst $el) -}}
+            {{ if $model.XDb }}
+                {{ $el }}Mapper "{{ getRootFolderPath }}/internal/mapper/{{ $el }}"
+            {{ end }}
         {{- end }}
     {{- end }}
     "gorm.io/gorm"
@@ -19,35 +24,56 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
 	return &RepositoryImpl{db}
 }
 
-{{ $paths := index $.Data.Tags .Tag }}
 {{ range $paths -}}
     {{ range .Operations -}}
-            {{ $xMeta := .XMeta }}
-            //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
-            func (r *RepositoryImpl) {{ upFirst .OperationId }}(
-                ctx context.Context,
-               {{- if .RequestBody }}
-                    {{- $modelName := .RequestBody.Content.ModelName }}
-                    {{ if .RequestBody.IsArray -}}
-                        {{ lowFirst $modelName }}DTO []*{{ lowFirst $modelName }}.{{ $modelName }}DTO, // {{ .Description }}
-                    {{ else -}}
-                        {{ lowFirst $modelName }}DTO *{{ lowFirst $modelName }}.{{ $modelName }}DTO,
-                    {{- end }}
-               {{- end }}
-               {{- range .Parameters -}}
-                    {{ $type := convertToGoType .Type .Format }}
-                    {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
-               {{- end }}
+        {{ $xMeta := .XMeta }}
+        //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
+        func (r *RepositoryImpl) {{ upFirst .OperationId }}(
+            ctx context.Context,
+            {{- if .RequestBody }}
+                {{- $modelName := .RequestBody.Content.ModelName }}
+                {{ if .RequestBody.IsArray -}}
+                    {{ lowFirst $modelName }}DTO []*{{ lowFirst $modelName }}.{{ $modelName }}DTO, // {{ .Description }}
+                {{ else -}}
+                    {{ lowFirst $modelName }}DTO *{{ lowFirst $modelName }}.{{ $modelName }}DTO,
+                {{- end }}
+            {{- end }}
+            {{- range .Parameters -}}
+                {{ $type := convertToGoType .Type .Format }}
+                {{ .Name }} {{ if .IsArray }} []{{ $type }} {{ else }} {{ $type }} {{ end }}, // Required: {{ .Required }}, Description: {{ .Description }}
+            {{- end }}
             ) {{ getResponse . }} {
                 {{ if and $xMeta ( eq $xMeta.Type "findbyid" ) }}
-                {{ $id := index .Parameters 0 }}
-                var entity *{{ .Tag }}.{{ $xMeta.Model.ModelName }}Entity
-                if err := r.Db.WithContext(ctx).Preload(clause.Associations).First(&entity, {{ $id.Name }}).Error; err != nil {
-                    return nil, err
-                }
-                return nil, nil
+                    {{ $id := index .Parameters 0 }}
+                    var entity *{{ lowFirst $xMeta.Model.ModelName }}.{{ $xMeta.Model.ModelName }}Entity
+                    if err := r.Db.WithContext(ctx).Preload(clause.Associations).First(&entity, {{ $id.Name }}).Error; err != nil {
+                        return nil, err
+                    }
+                    return {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}EntityToDTO(entity), nil
+                {{ else if and $xMeta ( eq $xMeta.Type "create" ) }}
+                    entity := {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}DTOtoEntity({{ lowFirst $xMeta.Model.ModelName }}DTO)
+                    if err := r.Db.WithContext(ctx).Create(entity).Error; err != nil {
+                        return nil, err
+                    }
+                    return {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}EntityToDTO(entity), nil
+                {{ else if and $xMeta ( eq $xMeta.Type "deletebyid" ) }}
+                    {{ $id := index .Parameters 0 }}
+                    tx := r.Db.Begin()
+                    if err := tx.WithContext(ctx).Delete(&{{ lowFirst $xMeta.Model.ModelName }}.{{ $xMeta.Model.ModelName }}Entity{}, {{ $id.Name }}).Error; err != nil {
+                        tx.Rollback()
+                        return err
+                    }
+                    tx.Commit()
+                    return nil
+                {{ else if and $xMeta ( eq $xMeta.Type "update" ) }}
+                    entity := {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}DTOtoEntity({{ lowFirst $xMeta.Model.ModelName }}DTO)
+                    db := r.Db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations:true}).Updates(entity)
+                    if err := db.Error; err != nil {
+                        return nil, err
+                    }
+                    return {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}EntityToDTO(entity), nil
                 {{ else }}
-                 panic("not implemented")
+                    panic("not implemented")
                 {{ end }}
             }
     {{ end -}}
