@@ -44,4 +44,7 @@ type {{ .ModelName }}Entity struct {
     {{ end }}
 }
 
+func ({{ .ModelName }}Entity) TableName() string {
+    return "public.{{ lowFirst .ModelName }}_dtos"
+}
 {{ end }}

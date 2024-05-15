@@ -1,6 +1,7 @@
 package main
 
 import (
+    "{{ getServiceName }}/docs"
     "github.com/gorilla/mux"
     "net/http"
     "fmt"
@@ -10,8 +11,16 @@ import (
         {{ $tag }}ServiceImport "{{ getRootFolderPath }}/internal/service/{{ $tag }}"
         {{ $tag }}ControllerImport "{{ getRootFolderPath }}/internal/transport/http/in/{{ $tag }}"
     {{ end }}
+    httpSwagger "gitflex.diasoft.ru/mvp-go/golang-libraries/http-swagger.git"
 )
 
+// @title {{ getServiceName }} api
+// @version 1.0
+// @description {{ getServiceName }} api
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @BasePath /{{ getServiceName }}
 func main() {
     gormdb := postgres.GetGorm()
     {{ range $tag, $paths := .Tags }}
@@ -21,6 +30,7 @@ func main() {
     {{ end }}
 
     r := mux.NewRouter()
+    r.PathPrefix("/{{ getServiceName }}/swagger/").Handler(httpSwagger.Handler()).Methods(http.MethodGet)
 
     initApiEndpoints(
         {{ range $tag, $paths := .Tags -}}
@@ -29,12 +39,14 @@ func main() {
         r,
     )
 
+    docs.SwaggerInfo.BasePath = "/{{ getServiceName }}"
+
     srv := &http.Server{
-    	Addr:    "127.0.0.1:8080",
+    	Addr:    "localhost:8080",
     	Handler: r,
     }
 
-    fmt.Printf("-----------------------------------------------------------\nApplication is running!\n-----------------------------------------------------------")
+    fmt.Printf("-----------------------------------------------------------\nApplication is running!\n-----------------------------------------------------------\n")
 
     if err := srv.ListenAndServe(); err != nil {
     	panic(err)
@@ -51,7 +63,7 @@ func initApiEndpoints(
         {{ range $path := $paths -}}
             {{- $url := $path.Url -}}
             {{- range $op := $path.Operations -}}
-                r.HandleFunc("{{ $url }}", {{ $tag }}.{{ upFirst $op.OperationId }}).Methods("{{ toUpper $op.Type }}")
+                r.HandleFunc("/{{ getServiceName }}{{ $url }}", {{ $tag }}.{{ upFirst $op.OperationId }}).Methods("{{ toUpper $op.Type }}")
             {{ end -}}
         {{ end -}}
     {{ end -}}

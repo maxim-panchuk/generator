@@ -291,3 +291,7 @@ func GetOperationCrudType(op *definitions.Operation) string {
 	}
 	return op.Type
 }
+
+func GetServiceName() string {
+	return config.Get().ServiceName
+}

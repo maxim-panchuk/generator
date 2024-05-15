@@ -75,6 +75,7 @@ func (xm *XMeta) IncludeModel(name string) {
 
 type Operation struct {
 	Tag         string
+	Url         string
 	Type        string
 	Summary     string
 	Description string

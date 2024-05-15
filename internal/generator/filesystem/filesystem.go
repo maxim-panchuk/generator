@@ -38,7 +38,8 @@ var (
 		PathToRepositoryRegistry,
 	}
 	files = map[string][]byte{
-		path.Join(PathToPostgresConfig, "config.go"): []byte(defaultfiles.PostgresConfig),
+		path.Join(PathToPostgresConfig, "config.go"):         []byte(defaultfiles.PostgresConfig),
+		path.Join(PathToServiceConfig, "servicesettings.go"): []byte(defaultfiles.ServiceSettings),
 	}
 )
 

@@ -3,6 +3,14 @@ package generated
 {{- $dpList := getTagDependencies .Tag }}
 {{ $paths := index $.Data.Tags .Tag }}
 import (
+    {{ range $paths }}
+        {{ range .Operations }}
+            {{ if and .XMeta (eq .XMeta.Type "findbyid") }}
+                "gorm.io/gorm/clause"
+                {{ break }}
+            {{ end }}
+        {{ end }}
+    {{ end }}
     {{- if gt (len $dpList ) 0 }}
         {{- range $idx, $el := $dpList }}
             "{{ getRootFolderPath }}/internal/models/{{ $el }}"
@@ -46,20 +54,20 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
                 {{ if and $xMeta ( eq $xMeta.Type "findbyid" ) }}
                     {{ $id := index .Parameters 0 }}
                     var entity *{{ lowFirst $xMeta.Model.ModelName }}.{{ $xMeta.Model.ModelName }}Entity
-                    if err := r.Db.WithContext(ctx).Preload(clause.Associations).First(&entity, {{ $id.Name }}).Error; err != nil {
+                    if err := r.Db.Table("{{ lowFirst $xMeta.Model.ModelName }}_dtos").WithContext(ctx).Preload(clause.Associations).First(&entity, {{ $id.Name }}).Error; err != nil {
                         return nil, err
                     }
                     return {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}EntityToDTO(entity), nil
                 {{ else if and $xMeta ( eq $xMeta.Type "create" ) }}
                     entity := {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}DTOtoEntity({{ lowFirst $xMeta.Model.ModelName }}DTO)
-                    if err := r.Db.WithContext(ctx).Create(entity).Error; err != nil {
+                    if err := r.Db.Table("{{ lowFirst $xMeta.Model.ModelName }}_dtos").WithContext(ctx).Create(entity).Error; err != nil {
                         return nil, err
                     }
                     return {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}EntityToDTO(entity), nil
                 {{ else if and $xMeta ( eq $xMeta.Type "deletebyid" ) }}
                     {{ $id := index .Parameters 0 }}
                     tx := r.Db.Begin()
-                    if err := tx.WithContext(ctx).Delete(&{{ lowFirst $xMeta.Model.ModelName }}.{{ $xMeta.Model.ModelName }}Entity{}, {{ $id.Name }}).Error; err != nil {
+                    if err := tx.Table("{{ lowFirst $xMeta.Model.ModelName }}_dtos").WithContext(ctx).Delete(&{{ lowFirst $xMeta.Model.ModelName }}.{{ $xMeta.Model.ModelName }}Entity{}, {{ $id.Name }}).Error; err != nil {
                         tx.Rollback()
                         return err
                     }
@@ -67,7 +75,7 @@ func NewRepository(db *gorm.DB) *RepositoryImpl {
                     return nil
                 {{ else if and $xMeta ( eq $xMeta.Type "update" ) }}
                     entity := {{ lowFirst $xMeta.Model.ModelName }}Mapper.Convert{{ upFirst $xMeta.Model.ModelName }}DTOtoEntity({{ lowFirst $xMeta.Model.ModelName }}DTO)
-                    db := r.Db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations:true}).Updates(entity)
+                    db := r.Db.Table("{{ lowFirst $xMeta.Model.ModelName }}_dtos").WithContext(ctx).Session(&gorm.Session{FullSaveAssociations:true}).Updates(entity)
                     if err := db.Error; err != nil {
                         return nil, err
                     }

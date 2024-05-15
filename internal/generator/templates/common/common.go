@@ -14,6 +14,7 @@ func Main() *template.Template {
 	}
 
 	funcMap := template.FuncMap{
+		"getServiceName":    utils.GetServiceName,
 		"upFirst":           utils.UpFirst,
 		"convertToGoType":   utils.ConvertToGoType,
 		"getRootFolderPath": utils.GetRootFolderPath,

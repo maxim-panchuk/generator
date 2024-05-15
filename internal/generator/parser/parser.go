@@ -50,16 +50,16 @@ func (p *Parser) addTags() error {
 func (p *Parser) iterateUris(tag string) ([]*definitions.Path, error) {
 	pathList := make([]*definitions.Path, 0)
 	for pair := p.doc.Model.Paths.PathItems.First(); pair != nil; pair = pair.Next() {
-		uri := pair.Key()
-		operations, err := p.iterateCruds(tag, pair.Value().GetOperations())
+		url := pair.Key()
+		operations, err := p.iterateCruds(tag, url, pair.Value().GetOperations())
 		if err != nil {
-			return nil, fmt.Errorf("iterateUris: %s", uri)
+			return nil, fmt.Errorf("iterateUris: %s", url)
 		}
 		if len(operations) == 0 {
 			continue
 		}
 		path := &definitions.Path{
-			Url:        uri,
+			Url:        url,
 			Operations: operations,
 		}
 		pathList = append(pathList, path)
@@ -67,7 +67,7 @@ func (p *Parser) iterateUris(tag string) ([]*definitions.Path, error) {
 	return pathList, nil
 }
 
-func (p *Parser) iterateCruds(tag string, cruds *orderedmap.Map[string, *v3.Operation]) ([]*definitions.Operation, error) {
+func (p *Parser) iterateCruds(tag, url string, cruds *orderedmap.Map[string, *v3.Operation]) ([]*definitions.Operation, error) {
 	operationList := make([]*definitions.Operation, 0)
 	for pair := cruds.First(); pair != nil; pair = pair.Next() {
 		opv3 := pair.Value()
@@ -75,6 +75,7 @@ func (p *Parser) iterateCruds(tag string, cruds *orderedmap.Map[string, *v3.Oper
 			continue
 		}
 		op, err := p.buildOperation(opv3)
+		op.Url = url
 		op.Type = pair.Key()
 		if err != nil {
 			return nil, fmt.Errorf("iterateCruds: %s", pair.Key())

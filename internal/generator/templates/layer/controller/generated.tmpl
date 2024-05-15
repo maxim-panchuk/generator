@@ -1,5 +1,6 @@
 package generated
 
+{{ $paths := index $.Data.Tags .Tag }}
 {{- $dpList := getControllerTagDependencies .Tag }}
 import (
     {{ .Tag }}Service "{{ getRootFolderPath }}/internal/service/{{ .Tag }}"
@@ -10,8 +11,23 @@ import (
     {{- end }}
     {{- if tagContainsTypicalOperation .Tag }}
     "encoding/json"
-    "github.com/gorilla/mux"
+    {{ $import_mux_strconv := false }}
+    {{ range $paths }}
+        {{ range .Operations }}
+            {{ if .XMeta }}
+                {{ range .Parameters }}
+                    {{ if or ( eq .In "query" ) ( eq .In "path" ) }}
+                        {{ $import_mux_strconv = true }}
+                        {{ break }}
+                    {{ end }}
+                {{ end }}
+            {{ end }}
+        {{ end }}
+    {{ end }}
+    {{- if $import_mux_strconv }}
     "strconv"
+    "github.com/gorilla/mux"
+    {{ end }}
     "context"
     {{- end }}
     "net/http"
@@ -25,13 +41,26 @@ func NewController(service {{ .Tag }}Service.Service) *ControllerImpl {
 	return &ControllerImpl{service: service}
 }
 
-{{ $paths := index $.Data.Tags .Tag }}
 {{ range $paths -}}
     {{ range .Operations -}}
         {{- $currOperation := . -}}
         {{- $containsPathParameters := containsPathParameters . -}}
         {{- $responseContainsSchema := responseContainsSchema . -}}
-        //{{ if or (ne .Summary "") (ne .Description "") }} {{ upFirst .OperationId }} - Summary: {{ .Summary }}. Description: {{ .Description }} {{ end }}
+        // {{ upFirst .OperationId }} godoc
+        // @Summary {{ if eq .Summary "" }} "default summary" {{ else }} "{{ .Summary }}" {{ end }}
+        // @Description {{ if eq .Description "" }} "default description" {{ else }} "{{ .Description }}" {{ end }}
+        // @Tags {{ .Tag }}
+        // @Accept json
+        {{- if .RequestBody }}
+        // @Param {{ .RequestBody.Content.ModelName }} body {{ lowFirst .RequestBody.Content.ModelName }}.{{ .RequestBody.Content.ModelName }}DTO true "{{ .Description }}" {{ else }} {{ end }}
+        {{- range .Parameters }}
+        // @Param {{ .Name }} {{ .In }} {{ .Type }} {{ .Required }} "{{ .Description }}"
+        {{- end }}
+        {{- range .Responses }}
+        //{{ if or (eq .Code "200") (eq .Code "default") }} @Success {{ else }} @Failure {{ end }} {{ .Code }} {{ if .IsArray }} {array} {{ end }} {{ if .Content }} {{ if not .IsArray }} {object} {{ end }} {{ lowFirst .Content.ModelName }}.{{ .Content.ModelName }}DTO {{ end }} "{{ .Description }}"
+        {{- end }}
+        // @Router {{ .Url }} [{{ .Type }}]
+        // @Security BearerAuth
         func (c *ControllerImpl) {{ upFirst .OperationId }}(
            w http.ResponseWriter, r *http.Request) {
                 {{- if not .IsTypical }}
