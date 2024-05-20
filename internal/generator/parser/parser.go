@@ -263,13 +263,14 @@ func (p *Parser) parseModel(schemaProxy *base.SchemaProxy, schemaName string) (*
 	}
 
 	model := &definitions.Model{
-		ModelName:   schemaName,
-		Type:        schema.Type[0],
-		Format:      schema.Format,
-		Description: schema.Description,
-		IsEnum:      false,
-		EnumValues:  nil,
-		XDb:         extractXDb(schema),
+		ModelName:    schemaName,
+		Type:         schema.Type[0],
+		Format:       schema.Format,
+		Description:  schema.Description,
+		IsEnum:       false,
+		EnumValues:   nil,
+		XDb:          extractXDb(schema),
+		PostgresType: utils.ConvertToPostgresType(schema.Type[0], schema.Format),
 	}
 
 	if schema.Enum != nil && len(schema.Enum) > 0 {

@@ -158,6 +158,26 @@ func ConvertToGoType(swaggerType, swaggerFormat string) string {
 	}
 }
 
+func ConvertToPostgresType(jsonType, jsonFormat string) string {
+	switch jsonType {
+	case "integer":
+		return "integer"
+	case "boolean":
+		return "bool"
+	case "string":
+		switch jsonFormat {
+		case "date":
+			return "timestamp"
+		case "date-time":
+			return "timestamp"
+		default:
+			return "varchar"
+		}
+	default:
+		return "varchar"
+	}
+}
+
 func ContainsTime(model *definitions.Model) bool {
 	containsTime := false
 	if model.PropKeys != nil && len(model.PropKeys) > 0 {
@@ -282,7 +302,7 @@ func GetAnnotationForEntityField(entityName string, m *definitions.Model) string
 			return fmt.Sprintf("gorm:\"many2many:%s_%s\"", entityName, LowFirst(schemaName))
 		}
 	}
-	return "gorm:\"\""
+	return fmt.Sprintf("gorm:\"type:%s\"", m.PostgresType)
 }
 
 func GetOperationCrudType(op *definitions.Operation) string {

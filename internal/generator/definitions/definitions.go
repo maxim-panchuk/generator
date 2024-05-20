@@ -10,17 +10,18 @@ type XDb struct {
 }
 
 type Model struct {
-	ModelName   string
-	Description string
-	Type        string
-	Format      string
-	PropKeys    []string
-	Properties  *orderedmap.Map[string, *Model]
-	Items       *Model
-	Ref         string
-	IsEnum      bool
-	EnumValues  []interface{}
-	XDb         *XDb
+	ModelName    string
+	Description  string
+	Type         string
+	Format       string
+	PropKeys     []string
+	Properties   *orderedmap.Map[string, *Model]
+	Items        *Model
+	Ref          string
+	IsEnum       bool
+	EnumValues   []interface{}
+	PostgresType string
+	XDb          *XDb
 }
 
 func (m *Model) GetReference() (ref string) {

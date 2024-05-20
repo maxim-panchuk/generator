@@ -3,6 +3,7 @@ package main
 import (
     "{{ getServiceName }}/docs"
     "github.com/gorilla/mux"
+    "gorm.io/gorm"
     "net/http"
     "fmt"
     "{{ getRootFolderPath }}/configs/database/postgres"
@@ -10,6 +11,11 @@ import (
         {{ $tag }}RepoImport "{{ getRootFolderPath }}/internal/database/repositories/{{ $tag }}"
         {{ $tag }}ServiceImport "{{ getRootFolderPath }}/internal/service/{{ $tag }}"
         {{ $tag }}ControllerImport "{{ getRootFolderPath }}/internal/transport/http/in/{{ $tag }}"
+    {{ end }}
+    {{ range .Models -}}
+        {{ if .XDb -}}
+            "{{ getRootFolderPath }}/internal/models/{{ lowFirst .ModelName }}"
+        {{- end }}
     {{ end }}
     httpSwagger "gitflex.diasoft.ru/mvp-go/golang-libraries/http-swagger.git"
 )
@@ -46,7 +52,15 @@ func main() {
     	Handler: r,
     }
 
-    fmt.Printf("-----------------------------------------------------------\nApplication is running!\n-----------------------------------------------------------\n")
+    println(
+    		fmt.Sprintf("\n----------------------------------------------------------\n\t"+
+    			"Application \"{{ getServiceName }}\" is running! Access URLs:\n\t"+
+    			"Local: \t\thttp://localhost:8080/{{ getServiceName }}\n\t"+
+    			"Swagger UI: \thttp://localhost:8080/{{ getServiceName }}/swagger/index.html\n\t"+
+    			"\n----------------------------------------------------------\n",
+    		),
+    	)
+    migrate(gormdb)
 
     if err := srv.ListenAndServe(); err != nil {
     	panic(err)
@@ -67,4 +81,16 @@ func initApiEndpoints(
             {{ end -}}
         {{ end -}}
     {{ end -}}
+}
+
+func migrate(gormdb *gorm.DB) {
+	if err := gormdb.Migrator().AutoMigrate(
+	    {{ range .Models -}}
+	        {{ if .XDb -}}
+	            {{ lowFirst .ModelName }}.{{ .ModelName }}Entity{},
+	        {{ end }}
+	    {{ end }}
+	); err != nil {
+		panic(err)
+	}
 }
