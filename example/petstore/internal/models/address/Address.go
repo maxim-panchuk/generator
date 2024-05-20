@@ -1,7 +1,5 @@
 package address
 
-import ()
-
 type AddressDTO struct {
 	Id     int64  `json:"id"`
 	Street string `json:"street"`
