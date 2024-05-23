@@ -17,7 +17,7 @@ import (
             "{{ getRootFolderPath }}/internal/models/{{ lowFirst .ModelName }}"
         {{- end }}
     {{ end }}
-    httpSwagger "gitflex.diasoft.ru/mvp-go/golang-libraries/http-swagger.git"
+    httpSwagger "github.com/maxim-panchuk/http-swagger"
 )
 
 // @title {{ getServiceName }} api

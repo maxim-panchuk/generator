@@ -1,0 +1,4 @@
+#!/bin/sh
+/gogen
+./swag init --parseInternal -d "$SERVICE_NAME" -o "$SERVICE_NAME"/docs -g cmd/app/main.go
+

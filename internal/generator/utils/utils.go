@@ -27,7 +27,7 @@ func LowFirst(s string) string {
 }
 
 func GetRootFolderPath() string {
-	return config.Get().PathToRepositoryRoot
+	return config.Get().ServiceName
 }
 
 func GetResponse(op *definitions.Operation) string {
