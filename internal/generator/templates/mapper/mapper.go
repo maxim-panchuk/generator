@@ -1,13 +1,17 @@
 package mapper
 
 import (
+	"embed"
+	_ "embed"
 	"generator/internal/generator/utils"
-	"os"
 	"text/template"
 )
 
+//go:embed mapper.tmpl
+var f embed.FS
+
 func Mapper() *template.Template {
-	f, err := os.ReadFile("internal/generator/templates/mapper/mapper.tmpl")
+	f, err := f.ReadFile("mapper.tmpl")
 	if err != nil {
 		panic(err)
 	}

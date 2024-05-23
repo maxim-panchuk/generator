@@ -1,14 +1,17 @@
 package common
 
 import (
+	"embed"
 	"generator/internal/generator/utils"
-	"os"
 	"strings"
 	"text/template"
 )
 
+//go:embed main.tmpl
+var fM embed.FS
+
 func Main() *template.Template {
-	f, err := os.ReadFile("internal/generator/templates/common/main.tmpl")
+	f, err := fM.ReadFile("main.tmpl")
 	if err != nil {
 		panic(err)
 	}

@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"embed"
 	"generator/internal/generator/utils"
-	"os"
 	"text/template"
 )
 
@@ -12,8 +12,11 @@ func New() *Template {
 	return &Template{}
 }
 
+//go:embed interface.tmpl
+var fInterface embed.FS
+
 func (t *Template) Interface() *template.Template {
-	f, err := os.ReadFile("internal/generator/templates/layer/controller/interface.tmpl")
+	f, err := fInterface.ReadFile("interface.tmpl")
 	if err != nil {
 		panic(err)
 	}
@@ -32,8 +35,11 @@ func (t *Template) Interface() *template.Template {
 	return tmpl
 }
 
+//go:embed generated.tmpl
+var fGenerated embed.FS
+
 func (t *Template) GeneratedInit() *template.Template {
-	f, err := os.ReadFile("internal/generator/templates/layer/controller/generated.tmpl")
+	f, err := fGenerated.ReadFile("generated.tmpl")
 	if err != nil {
 		panic(err)
 	}
@@ -58,8 +64,11 @@ func (t *Template) GeneratedInit() *template.Template {
 	return tmpl
 }
 
+//go:embed custom.tmpl
+var fCustom embed.FS
+
 func (t *Template) CustomInit() *template.Template {
-	f, err := os.ReadFile("internal/generator/templates/layer/controller/custom.tmpl")
+	f, err := fCustom.ReadFile("custom.tmpl")
 	if err != nil {
 		panic(err)
 	}

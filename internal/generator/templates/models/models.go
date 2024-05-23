@@ -1,14 +1,18 @@
 package models
 
 import (
+	"embed"
+	_ "embed"
 	"generator/internal/generator/utils"
-	"os"
 	"strings"
 	"text/template"
 )
 
+//go:embed models.tmpl
+var modelsF embed.FS
+
 func Models() *template.Template {
-	f, err := os.ReadFile("internal/generator/templates/models/models.tmpl")
+	f, err := modelsF.ReadFile("models.tmpl")
 	if err != nil {
 		panic(err)
 	}
